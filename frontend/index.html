@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="author" content="Julio Rodrigues">
+<meta name="email" content="julio.roodrigues@cocodovale.com.br">
+<title>Controle de Entregas</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:system-ui,sans-serif;padding:8px;background:#f0f2f5;font-size:12px;display:flex;flex-direction:column}
+#app{display:none;flex-direction:column;flex:1;min-height:0}
+.topbar{background:#1e3a5f;color:#fff;padding:14px 24px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;min-height:64px}
+.topbar-brand{display:flex;align-items:center;gap:16px}
+.topbar h1{font-size:19px;font-weight:700}
+.logo{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:700;font-size:20px;line-height:1;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.2)}
+.logo span{display:block;font-size:12px;font-style:italic;font-weight:400;letter-spacing:.03em;margin-top:1px}
+.topbar-filters{display:flex;gap:24px}
+.topbar-filters label{display:flex;flex-direction:column;font-size:11px;font-weight:600;color:#cbd5e1;gap:4px}
+.topbar-filters select{background:#1e3a5f;color:#fff;border:none;border-bottom:2px solid #fff;font-size:13px;font-weight:600;padding:2px 4px 4px;min-width:110px;cursor:pointer}
+.topbar-filters select:focus{outline:none;border-bottom-color:#60a5fa}
+
+.fat-bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.fat{border-radius:8px;padding:16px 14px;color:#fff;min-height:96px;display:flex;flex-direction:column;justify-content:center;border:2px solid}
+.fat-mes1{background:#14532d;border-color:#4ade80}.fat-mes2{background:#166534;border-color:#86efac}
+.fat-hoje1{background:#1e3a5f;border-color:#60a5fa}.fat-hoje2{background:#1e40af;border-color:#93c5fd}
+.fat-lbl{font-size:10px;font-weight:700;opacity:.85;text-transform:uppercase}
+.fat-val{font-size:24px;font-weight:800;margin:5px 0}
+.fat-sub{font-size:9px;opacity:.8}
+
+.kpi-bar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.kpi{border-radius:8px;padding:14px 12px;border:2px solid;color:#fff;min-height:84px;display:flex;flex-direction:column;justify-content:center}
+.kpi-slt{background:#7f1d1d;border-color:#dc2626}
+.kpi-sltr{background:#78350f;border-color:#f59e0b}
+.kpi-sltd{background:#1e3a5f;border-color:#3b82f6}
+.kpi-vlt{background:#4a1942;border-color:#a855f7}
+.kpi-otd{background:#14532d;border-color:#22c55e}
+.kpi-atr{background:#7c1c1c;border-color:#f87171}
+.kpi-pend{background:#1e3a5f;border-color:#60a5fa}
+.kl{font-size:9px;font-weight:700;opacity:.85;text-transform:uppercase;letter-spacing:.04em}
+.kv{font-size:22px;font-weight:800;margin:4px 0}
+.ks{font-size:9px;opacity:.75}
+
+.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-auto-rows:1fr;gap:8px;flex:1;min-height:0}
+.col{background:#fff;border-radius:10px;overflow:hidden;border:2px solid #e0e0e0;cursor:pointer;transition:box-shadow .15s;display:flex;flex-direction:column}
+.col:hover{box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.col.pend{border-color:#dc2626}
+.col.pend .hd{background:#fef2f2}
+.col.pend .accent{color:#dc2626}
+.col.d1{border-color:#7c3aed}
+.col.d1 .hd{background:#f5f3ff}
+.col.d1 .ht{color:#7c3aed}
+.col.d1 .accent{color:#7c3aed}
+.col.d2{border-color:#2563eb}
+.col.d2 .hd{background:#eff6ff}
+.col.d2 .ht{color:#2563eb}
+.col.d2 .accent{color:#2563eb}
+.col.d3{border-color:#16a34a}
+.col.d3 .hd{background:#f0fdf4}
+.col.d3 .ht{color:#16a34a}
+.col.d3 .accent{color:#16a34a}
+.col.d4{border-color:#d97706}
+.col.d4 .hd{background:#fffbeb}
+.col.d4 .ht{color:#d97706}
+.col.d4 .accent{color:#d97706}
+.col.d5{border-color:#0284c7}
+.col.d5 .hd{background:#f0f9ff}
+.col.d5 .ht{color:#0284c7}
+.col.d5 .accent{color:#0284c7}
+.hd{padding:12px 10px;text-align:center;border-bottom:1px solid #f0f0f0}
+.ht{font-size:14px;font-weight:700}
+.ht.pend{color:#b91c1c}
+.pend-badge{display:inline-block;font-size:9px;font-weight:700;background:#dc2626;color:#fff;padding:1px 6px;border-radius:10px;margin-left:4px}
+.hoje-badge{display:inline-block;font-size:9px;font-weight:700;background:#2563eb;color:#fff;padding:1px 6px;border-radius:10px;margin-left:6px;vertical-align:middle}
+
+.rows{padding:14px 16px}
+.row{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;font-size:12px}
+.rl{color:#666}
+.rv{font-weight:700;color:#111;font-size:13px}
+
+.sep{font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.03em;margin:12px 0 4px}
+
+.pont-wrap{margin-top:8px}
+.pont-lbl{font-size:9px;color:#999;margin-bottom:2px}
+.pont-row{display:flex;gap:6px}
+.pill{flex:1;text-align:center;border-radius:8px;padding:8px 2px;font-size:16px;font-weight:800}
+.pill-ant{background:#d1fae5;color:#047857}
+.pill-ok{background:#dbeafe;color:#1d4ed8}
+.pill-atr{background:#fee2e2;color:#dc2626}
+.pill-lbl{font-size:9px;display:block;font-weight:600;opacity:.8;margin-top:2px}
+
+.footer{text-align:left;padding:14px 0 6px 4px;font-size:11px;color:#9ca3af}
+.footer strong{color:#6b7280;font-weight:700}
+
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:150}
+#overlay.open{display:block}
+#ts{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:98vw;max-width:1900px;max-height:90vh;background:#fff;border-radius:12px;border:2px solid #e0e0e0;z-index:200;flex-direction:column;overflow:hidden}
+#ts.open{display:flex}
+#tt{padding:10px 14px;font-size:13px;font-weight:700;color:#374151;border-bottom:1px solid #f0f0f0;display:flex;gap:8px;align-items:center}
+#tts{font-size:11px;font-weight:400;color:#6b7280;flex:1}
+#xbtn{border:none;background:#2563eb;color:#fff;cursor:pointer;font-size:12px;padding:5px 12px;border-radius:6px;font-weight:600;margin-right:4px}
+#pbtn{border:none;background:#7c3aed;color:#fff;cursor:pointer;font-size:12px;padding:5px 12px;border-radius:6px;font-weight:600;margin-right:4px}
+#tbtn{border:none;background:#f3f4f6;cursor:pointer;font-size:14px;color:#374151;padding:4px 10px;border-radius:6px;font-weight:700}
+#tf{padding:8px 14px;border-bottom:1px solid #f0f0f0;display:flex;gap:16px;align-items:center;font-size:12px;color:#374151}
+#tf select{font-size:12px;padding:3px 6px;border-radius:5px;border:1px solid #d1d5db;margin-left:4px}
+#tcount{margin-left:auto;color:#6b7280;font-weight:600}
+.tw{overflow:auto;flex:1}
+table{width:100%;table-layout:auto;border-collapse:collapse;font-size:11px}
+thead th{background:#f9fafb;padding:6px 8px;text-align:left;font-weight:700;border-bottom:2px solid #e5e7eb;position:sticky;top:0;white-space:nowrap}
+tbody td{padding:5px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.td-val{text-align:right;font-weight:600;color:#1e40af}
+.st-pend{background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:8px;font-size:10px}
+.st-ant{background:#d1fae5;color:#065f46;padding:1px 6px;border-radius:8px;font-size:10px}
+.st-ok{background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:8px;font-size:10px}
+.st-atr{background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:8px;font-size:10px}
+
+#sltOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60}
+#sltOverlay.open{display:block}
+#sltModal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:96vw;max-width:1300px;max-height:90vh;background:#fff;border-radius:12px;border:2px solid #e0e0e0;z-index:110;flex-direction:column;overflow:hidden;padding:14px 16px}
+#sltModal.open{display:flex}
+#sltHead{display:flex;align-items:center;gap:10px}
+#sltTitleTxt{font-size:15px;font-weight:800;color:#7f1d1d;flex:1}
+#sltCloseBtn{border:none;background:#f3f4f6;cursor:pointer;font-size:14px;color:#374151;padding:4px 10px;border-radius:6px;font-weight:700}
+#sltSub{font-size:11px;color:#6b7280;margin:2px 0 10px}
+#sltTabs{display:flex;border-bottom:2px solid #e5e7eb;margin-bottom:10px}
+.slt-tab{padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;border:none;background:none;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-2px}
+.slt-tab.active{color:#dc2626;border-bottom-color:#dc2626}
+#sltCards{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.slt-card{background:#fff;border:1px solid #e5e7eb;border-left:4px solid #dc2626;border-radius:8px;padding:8px 14px;min-width:130px}
+.slt-card.clk{cursor:pointer;transition:box-shadow .15s}
+.slt-card.clk:hover{box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.slt-cl{font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.04em}
+.slt-cv{font-size:20px;font-weight:800;color:#dc2626;margin:2px 0}
+.slt-cs{font-size:10px;color:#6b7280}
+#sltFilterRow{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+#sltFilterRow .lbl{font-size:11px;color:#6b7280;font-weight:600}
+#sltSearch{height:28px;padding:0 10px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;width:240px}
+.cnt{font-size:10px;color:#dc2626;font-weight:700;background:#fef2f2;padding:2px 8px;border-radius:10px}
+#sltExportBtn{margin-left:auto;border:none;background:#16a34a;color:#fff;cursor:pointer;font-size:12px;padding:5px 12px;border-radius:6px;font-weight:600}
+#sltChips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.slt-chip{padding:3px 12px;font-size:11px;font-weight:600;border:1px solid #d1d5db;border-radius:20px;background:#fff;color:#6b7280;cursor:pointer;white-space:nowrap}
+.slt-chip:hover{background:#f3f4f6}
+.slt-chip.active{border-color:#dc2626;background:#fef2f2;color:#dc2626}
+#sltTw{overflow:auto;flex:1;border:1px solid #e5e7eb;border-radius:8px}
+#sltTw table{width:100%;border-collapse:collapse;font-size:12px}
+#sltTw thead th{background:#f9fafb;padding:7px 10px;text-align:left;font-weight:700;border-bottom:2px solid #e5e7eb;position:sticky;top:0;white-space:nowrap}
+#sltTw thead th.n{text-align:right}
+#sltTw tbody td{padding:6px 10px;border-bottom:1px solid #f3f4f6;white-space:nowrap}
+#sltTw tbody td.n{text-align:right;font-variant-numeric:tabular-nums}
+#sltTw tbody tr{cursor:pointer}
+#sltTw tbody tr:hover td{background:#fef2f2}
+.slt-nf-tag{display:inline-block;padding:1px 8px;border-radius:20px;font-size:11px;font-weight:700;background:#fef2f2;color:#dc2626}
+
+#loading{text-align:center;padding:40px;color:#6b7280}
+@media print{
+  body *{visibility:hidden}
+  #ts, #ts *{visibility:visible}
+  #ts{position:absolute;top:0;left:0;width:100%;max-width:none;max-height:none;border:none;transform:none}
+  #xbtn,#pbtn,#tbtn,#tf{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="loading">Carregando dados...</div>
+
+<div id="app" style="display:none">
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="logo">Coco<span>do Vale</span></div>
+      <h1>Controle de Entregas</h1>
+    </div>
+    <div class="topbar-filters">
+      <label>Mês
+        <select id="fMes">
+          <option value="">Todos</option>
+          <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option>
+          <option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option>
+          <option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option>
+          <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+        </select>
+      </label>
+      <label>Ano
+        <select id="fAno"></select>
+      </label>
+      <label>Dia
+        <select id="fDia"><option value="">Todos</option></select>
+      </label>
+    </div>
+  </div>
+  <div class="fat-bar" id="fatBar"></div>
+  <div class="kpi-bar" id="kpiBar"></div>
+  <div class="grid" id="grid"></div>
+  <div class="footer">Desenvolvido por <strong>Julio Cesar</strong></div>
+</div>
+
+<div id="overlay"></div>
+<div id="ts">
+  <div id="tt">Notas fiscais — <span id="tts"></span>
+    <button id="xbtn" type="button">📊 Exportar Excel</button>
+    <button id="pbtn" type="button">🖨 Imprimir / PDF</button>
+    <button id="tbtn" type="button">✕ Fechar</button>
+  </div>
+  <div id="tf">
+    <label>Status:
+      <select id="fStatus">
+        <option value="">Todos</option>
+        <option value="Pendente">Pendente</option>
+        <option value="Antecipada">Antecipada</option>
+        <option value="No prazo">No prazo</option>
+        <option value="Atrasado">Atrasado</option>
+      </select>
+    </label>
+    <label>NF Entrada:
+      <select id="fNfEntrada">
+        <option value="">Todos</option>
+        <option value="com">Com NF Entrada</option>
+        <option value="sem">Sem NF Entrada</option>
+      </select>
+    </label>
+    <span id="tcount"></span>
+  </div>
+  <div class="tw">
+    <table>
+      <thead>
+        <tr>
+          <th>Romaneio</th><th>NF</th><th>Cliente</th><th>Cidade</th><th>UF</th><th>Fluxo</th>
+          <th>Transportadora</th><th>LT 1ª</th><th>Ent.Redesp.</th><th>Status 1ª</th>
+          <th>Transp.Redesp.</th><th>LT 2ª</th><th>Valor</th><th>Emissão</th><th>Prev.</th>
+          <th>Entrega</th><th>Status</th><th>NF Entrada</th>
+        </tr>
+      </thead>
+      <tbody id="tb"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="sltOverlay"></div>
+<div id="sltModal">
+  <div id="sltHead">
+    <span id="sltTitleTxt">⚠ Transportadoras Sem Lead Time Cadastrado</span>
+    <button id="sltCloseBtn" type="button">✕ Fechar</button>
+  </div>
+  <div id="sltSub">NFs pendentes de entrega cujo lead time (1ª ou 2ª perna) não está cadastrado</div>
+  <div id="sltTabs">
+    <button class="slt-tab active" id="sltTabDireta" type="button">📦 Entrega Direta — Sem LT 1ª</button>
+    <button class="slt-tab" id="sltTabRedesp" type="button">🔄 Redespacho — Sem LT 2ª</button>
+  </div>
+  <div id="sltCards"></div>
+  <div id="sltFilterRow">
+    <span class="lbl">Buscar:</span>
+    <input id="sltSearch" type="text" placeholder="Transportadora, cidade ou UF...">
+    <span id="sltCidCount" class="cnt"></span>
+    <button id="sltExportBtn" type="button">📊 Exportar Excel</button>
+  </div>
+  <div id="sltChips"></div>
+  <div id="sltTw">
+    <table>
+      <thead>
+        <tr><th>Transportadora</th><th>Cidade</th><th>UF</th><th class="n">NFs sem LT</th></tr>
+      </thead>
+      <tbody id="sltCidBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const API_BASE = window.API_BASE_URL || "http://localhost:8000";
+
+let _payload = null;
+let _curRows = [];
+let _curLabel = "";
+let _curExportPath = null;
+
+const statusClass = {
+  "Pendente": "st-pend", "Antecipada": "st-ant",
+  "No prazo": "st-ok", "Atrasado": "st-atr"
+};
+
+function fmtMoeda(v) {
+  if (v == null) return "R$ 0";
+  return "R$ " + Math.round(v).toLocaleString("pt-BR");
+}
+
+function fmtMoedaResumo(v) {
+  if (v == null) return "R$ 0";
+  if (Math.abs(v) >= 1000000) return "R$ " + Math.round(v / 1000).toLocaleString("pt-BR") + " M";
+  return "R$ " + Math.round(v).toLocaleString("pt-BR") + (Math.abs(v) >= 1000 ? " K" : "");
+}
+
+const MESES_ABREV = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+
+function mesAtualAbrev() {
+  const iso = _payload?.datas_referencia?.D2;
+  if (!iso) return "";
+  return MESES_ABREV[new Date(iso + "T00:00:00").getMonth()];
+}
+
+async function carregar(dataBase) {
+  try {
+    const qs = dataBase ? `?data_base=${dataBase}` : "";
+    const res = await fetch(`${API_BASE}/api/previsao-entregas${qs}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    _payload = await res.json();
+    renderFaturamento();
+    renderKPIs();
+    renderGrid();
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("app").style.display = "flex";
+  } catch (e) {
+    document.getElementById("loading").textContent =
+      "Erro ao carregar dados: " + e.message + " (verifique se a API está acessível)";
+  }
+}
+
+function popularFiltrosData() {
+  const hoje = new Date();
+  const anoAtual = hoje.getFullYear();
+  const anoSel = document.getElementById("fAno");
+  anoSel.innerHTML = "";
+  for (let a = anoAtual - 1; a <= anoAtual + 1; a++) {
+    const opt = document.createElement("option");
+    opt.value = a;
+    opt.textContent = a;
+    if (a === anoAtual) opt.selected = true;
+    anoSel.appendChild(opt);
+  }
+}
+
+function popularDias() {
+  const mes = document.getElementById("fMes").value;
+  const ano = document.getElementById("fAno").value;
+  const diaSel = document.getElementById("fDia");
+  const diaAtual = diaSel.value;
+  diaSel.innerHTML = '<option value="">Todos</option>';
+  if (!mes) return;
+  const ultimoDia = new Date(Number(ano), Number(mes), 0).getDate();
+  for (let d = 1; d <= ultimoDia; d++) {
+    const opt = document.createElement("option");
+    opt.value = d;
+    opt.textContent = String(d).padStart(2, "0");
+    diaSel.appendChild(opt);
+  }
+  if (diaAtual && Number(diaAtual) <= ultimoDia) diaSel.value = diaAtual;
+}
+
+function aplicarFiltrosData() {
+  const mes = document.getElementById("fMes").value;
+  const ano = document.getElementById("fAno").value;
+  const dia = document.getElementById("fDia").value;
+
+  if (!mes) {
+    carregar();
+    return;
+  }
+  const ultimoDia = new Date(Number(ano), Number(mes), 0).getDate();
+  const diaEscolhido = dia || String(ultimoDia);
+  const dataBase = `${ano}-${String(mes).padStart(2, "0")}-${String(diaEscolhido).padStart(2, "0")}`;
+  carregar(dataBase);
+}
+
+document.getElementById("fMes").addEventListener("change", () => { popularDias(); aplicarFiltrosData(); });
+document.getElementById("fAno").addEventListener("change", () => { popularDias(); aplicarFiltrosData(); });
+document.getElementById("fDia").addEventListener("change", aplicarFiltrosData);
+
+popularFiltrosData();
+
+function renderFaturamento() {
+  const k = _payload.kpis;
+  const mes = mesAtualAbrev();
+  document.getElementById("fatBar").innerHTML = `
+    <div class="fat fat-mes1" id="fatMes1" style="cursor:pointer"><div class="fat-lbl">Faturamento do Mês (${mes})</div><div class="fat-val">${fmtMoedaResumo(k.faturamento_mes_com_romaneio)}</div><div class="fat-sub">${k.nfs_mes_com_romaneio} NFs emitidas no mês · ${fmtMoeda(k.devolvido_mes_valor)} devolvido (NF Entrada)</div></div>
+    <div class="fat fat-mes2" id="fatMes2" style="cursor:pointer"><div class="fat-lbl">Faturamento do Mês (${mes})</div><div class="fat-val">${fmtMoedaResumo(k.faturamento_mes_liquido)}</div><div class="fat-sub">${k.nfs_mes_liquido} NFs emitidas no mês · ${k.sem_romaneio_mes_qtd} sem romaneio</div></div>
+    <div class="fat fat-hoje1" id="fatHoje1" style="cursor:pointer"><div class="fat-lbl">Faturamento de Hoje</div><div class="fat-val">${fmtMoedaResumo(k.faturamento_hoje_liquido)}</div><div class="fat-sub">${k.nfs_hoje_liquido} NFs emitidas hoje · ${fmtMoeda(k.devolvido_hoje_valor)} devolvido (NF Entrada)</div></div>
+    <div class="fat fat-hoje2" id="fatHoje2" style="cursor:pointer"><div class="fat-lbl">Faturamento de Hoje</div><div class="fat-val">${fmtMoedaResumo(k.valor_sem_romaneio_hoje)}</div><div class="fat-sub">${k.nfs_hoje} NFs emitidas hoje · ${k.sem_romaneio_hoje} sem romaneio</div></div>
+  `;
+}
+
+function renderKPIs() {
+  const k = _payload.kpis;
+  document.getElementById("kpiBar").innerHTML = `
+    <div class="kpi kpi-slt" id="kpiSlt" style="cursor:pointer"><div class="kl">⚠ Sem Lead Time</div><div class="kv">${k.sem_lead_time_total}</div><div class="ks">${fmtMoedaResumo(k.sem_lead_time_valor)} em risco</div></div>
+    <div class="kpi kpi-sltr"><div class="kl">Sem LT — Redespacho</div><div class="kv">${k.sem_lead_time_redespacho_qtd}</div><div class="ks">${fmtMoedaResumo(k.sem_lead_time_redespacho_valor)}</div></div>
+    <div class="kpi kpi-sltd"><div class="kl">Sem LT — Direta</div><div class="kv">${k.sem_lead_time_direta_qtd}</div><div class="ks">${fmtMoedaResumo(k.sem_lead_time_direta_valor)}</div></div>
+    <div class="kpi kpi-vlt"><div class="kl">✓ OTD — Mês</div><div class="kv">${k.otd_pct}%</div><div class="ks">${k.otd_no_prazo} no prazo / ${k.otd_base} entregas</div></div>
+    <div class="kpi kpi-otd"><div class="kl">▲ Antecipadas</div><div class="kv">${k.otd_antecipado}</div><div class="ks">entregas antecipadas</div></div>
+    <div class="kpi kpi-atr"><div class="kl">▼ Atrasadas</div><div class="kv">${k.otd_atrasado}</div><div class="ks">entregas com atraso</div></div>
+    <div class="kpi kpi-pend"><div class="kl">⏳ Em Trânsito</div><div class="kv">${k.em_transito_total}</div><div class="ks">aguardando entrega</div></div>
+  `;
+}
+
+function pillsHtml(pont) {
+  if (!pont) return "";
+  return `
+    <div class="pont-wrap">
+      <div class="pont-row">
+        <div class="pill pill-ant">${pont.antecipada}<span class="pill-lbl">Antec.</span></div>
+        <div class="pill pill-ok">${pont.no_prazo}<span class="pill-lbl">No prazo</span></div>
+        <div class="pill pill-atr">${pont.atrasada}<span class="pill-lbl">Atrasado</span></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderGrid() {
+  const labels = {
+    pendentes: "NF Pendentes",
+    d1: formatLabel(_payload.datas_referencia.D1, "Ontem"),
+    d2: formatLabel(_payload.datas_referencia.D2, "Hoje"),
+    d3: formatLabel(_payload.datas_referencia.D3),
+    d4: formatLabel(_payload.datas_referencia.D4),
+    d5: formatLabel(_payload.datas_referencia.D5)
+  };
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
+  Object.keys(labels).forEach((key) => {
+    const qtd = _payload.periodos[key]?.length || 0;
+    const div = document.createElement("div");
+    div.className = "col " + (key === "pendentes" ? "pend" : key);
+
+    if (key === "pendentes") {
+      const rp = _payload.resumo_pendentes || {};
+      div.innerHTML = `
+        <div class="hd"><div class="ht pend">⚠ NF Pendentes<span class="pend-badge">${qtd}</span></div></div>
+        <div class="rows">
+          <div class="blk">
+            <div class="sep">Direta</div>
+            <div class="row"><span class="rl">NFs</span><span class="rv">${rp.direta_qtd ?? 0}</span></div>
+            <div class="row"><span class="rl">Valor</span><span class="rv accent">${fmtMoedaResumo(rp.direta_valor)}</span></div>
+          </div>
+          <div class="blk">
+            <div class="sep">Redespacho</div>
+            <div class="row"><span class="rl">NFs</span><span class="rv">${rp.redespacho_qtd ?? 0}</span></div>
+            <div class="row"><span class="rl">Valor</span><span class="rv accent">${fmtMoedaResumo(rp.redespacho_valor)}</span></div>
+          </div>
+        </div>`;
+    } else {
+      const pont = _payload.pontualidade?.[key] || {};
+      const direta = pont.direta || {};
+      const redesp = pont.redespacho || {};
+      const hojeTag = key === "d2" ? '<span class="hoje-badge">HOJE</span>' : "";
+      div.innerHTML = `
+        <div class="hd"><div class="ht">${labels[key]}${hojeTag}</div></div>
+        <div class="rows">
+          <div class="blk">
+            <div class="row"><span class="rl">Prev. cliente</span><span class="rv accent">${(direta.qtd_entregue ?? 0) + (redesp.qtd_entregue ?? 0)} / ${(direta.qtd_total ?? 0) + (redesp.qtd_total ?? 0)}</span></div>
+            <div class="row"><span class="rl">Valor</span><span class="rv accent">${fmtMoedaResumo((direta.valor_entregue||0) + (redesp.valor_entregue||0))} / ${fmtMoedaResumo((direta.valor_total||0) + (redesp.valor_total||0))}</span></div>
+          </div>
+          <div class="blk">
+            <div class="sep">Direta</div>
+            <div class="row"><span class="rl">NFs</span><span class="rv">${direta.qtd_entregue ?? 0} / ${direta.qtd_total ?? 0}</span></div>
+            <div class="row"><span class="rl">Val</span><span class="rv accent">${fmtMoedaResumo(direta.valor_entregue)} / ${fmtMoedaResumo(direta.valor_total)}</span></div>
+            ${pillsHtml(direta)}
+          </div>
+          <div class="blk">
+            <div class="sep">Redespacho</div>
+            <div class="row"><span class="rl">NFs</span><span class="rv">${redesp.qtd_entregue ?? 0} / ${redesp.qtd_total ?? 0}</span></div>
+            <div class="row"><span class="rl">Val</span><span class="rv accent">${fmtMoedaResumo(redesp.valor_entregue)} / ${fmtMoedaResumo(redesp.valor_total)}</span></div>
+            ${pillsHtml(redesp)}
+          </div>
+        </div>`;
+    }
+
+    div.addEventListener("click", () => abrirModal(key, labels[key]));
+    grid.appendChild(div);
+  });
+}
+
+function fmtData(isoDate) {
+  if (!isoDate) return "—";
+  const d = new Date(isoDate + "T00:00:00");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth()+1).padStart(2, "0");
+  return dd + "/" + mm + "/" + d.getFullYear();
+}
+
+function formatLabel(isoDate, prefixo) {
+  if (!isoDate) return "—";
+  const d = new Date(isoDate + "T00:00:00");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth()+1).padStart(2, "0");
+  return (prefixo ? prefixo + " " : "") + dd + "/" + mm + "/" + d.getFullYear();
+}
+
+function linhaHtml(r) {
+  return `
+    <tr>
+      <td>${r.ROMANEIO||"—"}</td>
+      <td>${r.NF}</td><td>${r.CLIENTE}</td><td>${r.CIDADE_CLIENTE||""}</td>
+      <td>${r.UF_CLIENTE||""}</td><td>${r.TIPO_FLUXO==="REDESPACHO"?"Red":"Dir"}</td>
+      <td>${r.TRANSP_PRINCIPAL||""}</td><td>${r.lt_1a}</td><td>${r.entrega_redesp}</td>
+      <td><span class="${statusClass[r.status_1a]||''}">${r.status_1a}</span></td>
+      <td>${r.transp_redesp}</td><td>${r.lt_2a}</td>
+      <td class="td-val">${fmtMoeda(r.VALOR_NF)}</td>
+      <td>${fmtData(r.DT_EMISSAO)}</td>
+      <td>${fmtData(r.DT_PREVISTA_CLIENTE_FINAL)}</td>
+      <td>${fmtData(r.DT_ENTREGA_CLIENTE)}</td>
+      <td><span class="${statusClass[r.status_final]||''}">${r.status_final}</span></td>
+      <td>${r.NF_ENTRADA||"—"}</td>
+    </tr>`;
+}
+
+function renderTabelaFiltrada() {
+  const fStatus = document.getElementById("fStatus").value;
+  const fNf = document.getElementById("fNfEntrada").value;
+  let rows = _curRows;
+  if (fStatus) rows = rows.filter(r => r.status_final === fStatus);
+  if (fNf === "com") rows = rows.filter(r => !!r.NF_ENTRADA);
+  if (fNf === "sem") rows = rows.filter(r => !r.NF_ENTRADA);
+
+  document.getElementById("tb").innerHTML = rows.map(linhaHtml).join("");
+  document.getElementById("tts").textContent = `${_curLabel} — ${_curRows.length} NFs`;
+  document.getElementById("tcount").textContent = `${rows.length} registros`;
+}
+
+function abrirModalComLinhas(label, rows, exportPath) {
+  _curRows = rows;
+  _curLabel = label;
+  _curExportPath = exportPath;
+  document.getElementById("fStatus").value = "";
+  document.getElementById("fNfEntrada").value = "";
+  renderTabelaFiltrada();
+  document.getElementById("ts").classList.add("open");
+  document.getElementById("overlay").classList.add("open");
+}
+
+function abrirModal(periodo, label) {
+  abrirModalComLinhas(label, _payload.periodos[periodo] || [], periodo);
+}
+
+async function abrirModalMesComRomaneio() {
+  try {
+    const res = await fetch(`${API_BASE}/api/notas-fiscais/mes-com-romaneio`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const dados = await res.json();
+    abrirModalComLinhas("Faturamento do Mês", dados, "mes-com-romaneio");
+  } catch (e) {
+    alert("Erro ao carregar notas do mês: " + e.message);
+  }
+}
+
+async function abrirModalMesSemRomaneio() {
+  try {
+    const res = await fetch(`${API_BASE}/api/notas-fiscais/mes-sem-romaneio`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const dados = await res.json();
+    abrirModalComLinhas("Sem Romaneio — Mês", dados, "mes-sem-romaneio");
+  } catch (e) {
+    alert("Erro ao carregar notas do mês: " + e.message);
+  }
+}
+
+async function abrirModalHoje() {
+  try {
+    const res = await fetch(`${API_BASE}/api/notas-fiscais/hoje`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const dados = await res.json();
+    abrirModalComLinhas("Faturamento de Hoje", dados, "hoje");
+  } catch (e) {
+    alert("Erro ao carregar notas de hoje: " + e.message);
+  }
+}
+
+async function abrirModalHojeSemRomaneio() {
+  try {
+    const res = await fetch(`${API_BASE}/api/notas-fiscais/hoje-sem-romaneio`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const dados = await res.json();
+    abrirModalComLinhas("Sem Romaneio — Hoje", dados, "hoje-sem-romaneio");
+  } catch (e) {
+    alert("Erro ao carregar notas de hoje: " + e.message);
+  }
+}
+
+// ---------------------------------------------------------------------
+// Modal "Sem Lead Time" (transportadoras/cidades sem LT cadastrado)
+// ---------------------------------------------------------------------
+
+let _sltData = null;
+let _sltTab = "direta";
+let _sltChipTransp = "";
+
+async function abrirSemLeadTime() {
+  try {
+    const res = await fetch(`${API_BASE}/api/sem-lead-time`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    _sltData = await res.json();
+    _sltTab = "direta";
+    _sltChipTransp = "";
+    document.getElementById("sltSearch").value = "";
+    renderSltTabs();
+    document.getElementById("sltModal").classList.add("open");
+    document.getElementById("sltOverlay").classList.add("open");
+  } catch (e) {
+    alert("Erro ao carregar sem lead time: " + e.message);
+  }
+}
+
+function fecharSlt() {
+  document.getElementById("sltModal").classList.remove("open");
+  document.getElementById("sltOverlay").classList.remove("open");
+  _sltData = null;
+}
+
+function sltPerna() {
+  return _sltTab === "direta" ? _sltData.direta : _sltData.redespacho;
+}
+
+function renderSltTabs() {
+  document.getElementById("sltTabDireta").classList.toggle("active", _sltTab === "direta");
+  document.getElementById("sltTabRedesp").classList.toggle("active", _sltTab === "redespacho");
+  renderSltCards();
+  renderSltChips();
+  renderSltCidades();
+}
+
+function renderSltCards() {
+  const p = sltPerna();
+  document.getElementById("sltCards").innerHTML = `
+    <div class="slt-card clk" id="sltCardNfs"><div class="slt-cl">NFs sem LT</div><div class="slt-cv">${p.nfs_total}</div><div class="slt-cs">clique para ver detalhes</div></div>
+    <div class="slt-card"><div class="slt-cl">Transportadoras</div><div class="slt-cv">${p.transportadoras_total}</div><div class="slt-cs">com cidades sem LT</div></div>
+    <div class="slt-card"><div class="slt-cl">Cidades afetadas</div><div class="slt-cv">${p.cidades_total}</div><div class="slt-cs">sem Lead Time</div></div>
+    <div class="slt-card"><div class="slt-cl">UFs afetadas</div><div class="slt-cv">${p.ufs_total}</div><div class="slt-cs">estados sem cobertura</div></div>
+    <div class="slt-card clk" id="sltCardSemRom"><div class="slt-cl">Sem Romaneio</div><div class="slt-cv">${_sltData.sem_romaneio_qtd}</div><div class="slt-cs">clique para ver detalhes</div></div>
+  `;
+  document.getElementById("sltCardNfs").addEventListener("click", () => {
+    const titulo = "Sem Lead Time — " + (_sltTab === "direta" ? "Entrega Direta" : "Redespacho");
+    abrirModalComLinhas(titulo, p.nfs, null);
+  });
+  document.getElementById("sltCardSemRom").addEventListener("click", () => {
+    abrirModalComLinhas("Sem Romaneio e Sem Lead Time", _sltData.sem_romaneio_nfs, null);
+  });
+}
+
+function renderSltChips() {
+  const p = sltPerna();
+  const transps = [...new Set(p.cidades.map(c => c.TRANSPORTADORA))].sort();
+  let html = `<button class="slt-chip ${_sltChipTransp === "" ? "active" : ""}" data-tp="">Todas</button>`;
+  transps.forEach(t => {
+    html += `<button class="slt-chip ${_sltChipTransp === t ? "active" : ""}" data-tp="${t}">${t}</button>`;
+  });
+  document.getElementById("sltChips").innerHTML = html;
+}
+
+function renderSltCidades() {
+  const p = sltPerna();
+  const termo = document.getElementById("sltSearch").value.toLowerCase();
+  let linhas = p.cidades;
+  if (_sltChipTransp) linhas = linhas.filter(c => c.TRANSPORTADORA === _sltChipTransp);
+  if (termo) {
+    linhas = linhas.filter(c =>
+      (c.TRANSPORTADORA || "").toLowerCase().includes(termo) ||
+      (c.CIDADE_CLIENTE || "").toLowerCase().includes(termo) ||
+      (c.UF_CLIENTE || "").toLowerCase().includes(termo)
+    );
+  }
+  document.getElementById("sltCidBody").innerHTML = linhas.map(c => `
+    <tr data-tp="${c.TRANSPORTADORA}" data-cid="${c.CIDADE_CLIENTE}">
+      <td>${c.TRANSPORTADORA}</td><td>${c.CIDADE_CLIENTE}</td><td>${c.UF_CLIENTE}</td>
+      <td class="n"><span class="slt-nf-tag">${c.qtd}</span></td>
+    </tr>
+  `).join("");
+  document.getElementById("sltCidCount").textContent = `${linhas.length} cidades`;
+}
+
+document.getElementById("sltCloseBtn").addEventListener("click", fecharSlt);
+document.getElementById("sltOverlay").addEventListener("click", fecharSlt);
+
+document.getElementById("sltTabDireta").addEventListener("click", () => {
+  _sltTab = "direta"; _sltChipTransp = ""; document.getElementById("sltSearch").value = "";
+  renderSltTabs();
+});
+document.getElementById("sltTabRedesp").addEventListener("click", () => {
+  _sltTab = "redespacho"; _sltChipTransp = ""; document.getElementById("sltSearch").value = "";
+  renderSltTabs();
+});
+
+document.getElementById("sltSearch").addEventListener("input", renderSltCidades);
+
+document.getElementById("sltChips").addEventListener("click", (e) => {
+  const btn = e.target.closest(".slt-chip");
+  if (!btn) return;
+  _sltChipTransp = btn.getAttribute("data-tp");
+  renderSltChips();
+  renderSltCidades();
+});
+
+document.getElementById("sltCidBody").addEventListener("click", (e) => {
+  const tr = e.target.closest("tr");
+  if (!tr) return;
+  const tp = tr.getAttribute("data-tp");
+  const cid = tr.getAttribute("data-cid");
+  const p = sltPerna();
+  const campoTransp = _sltTab === "direta" ? "TRANSP_PRINCIPAL" : "transp_redesp";
+  const filtrados = p.nfs.filter(r => r[campoTransp] === tp && r.CIDADE_CLIENTE === cid);
+  abrirModalComLinhas(`Sem Lead Time — ${tp} — ${cid}`, filtrados, null);
+});
+
+document.getElementById("sltExportBtn").addEventListener("click", () => {
+  const linhas = [["Transportadora", "Cidade", "UF", "NFs sem LT"].join(";")];
+  document.querySelectorAll("#sltCidBody tr").forEach(tr => {
+    const tds = tr.querySelectorAll("td");
+    linhas.push(`${tds[0].textContent};${tds[1].textContent};${tds[2].textContent};${tds[3].textContent.trim()}`);
+  });
+  const blob = new Blob([linhas.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Sem_LeadTime_${_sltTab}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+function fecharModal() {
+  document.getElementById("ts").classList.remove("open");
+  document.getElementById("overlay").classList.remove("open");
+  _curRows = [];
+  _curExportPath = null;
+}
+
+document.getElementById("tbtn").addEventListener("click", fecharModal);
+document.getElementById("overlay").addEventListener("click", fecharModal);
+document.getElementById("pbtn").addEventListener("click", () => window.print());
+document.getElementById("fStatus").addEventListener("change", renderTabelaFiltrada);
+document.getElementById("fNfEntrada").addEventListener("change", renderTabelaFiltrada);
+
+document.getElementById("xbtn").addEventListener("click", () => {
+  if (_curExportPath) {
+    window.open(`${API_BASE}/api/notas-fiscais/${_curExportPath}/export.csv`, "_blank");
+    return;
+  }
+  exportarCsvClientSide(_curRows, `${_curLabel}.csv`);
+});
+
+function exportarCsvClientSide(rows, filename) {
+  if (!rows.length) return;
+  const cols = Object.keys(rows[0]);
+  const linhas = [cols.join(";")];
+  rows.forEach(r => linhas.push(cols.map(c => r[c] ?? "").join(";")));
+  const blob = new Blob([linhas.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById("fatBar").addEventListener("click", (e) => {
+  if (e.target.closest("#fatMes1")) abrirModalMesComRomaneio();
+  if (e.target.closest("#fatMes2")) abrirModalMesSemRomaneio();
+  if (e.target.closest("#fatHoje1")) abrirModalHoje();
+  if (e.target.closest("#fatHoje2")) abrirModalHojeSemRomaneio();
+});
+
+document.getElementById("kpiBar").addEventListener("click", (e) => {
+  if (e.target.closest("#kpiSlt")) abrirSemLeadTime();
+});
+
+carregar();
+</script>
+</body>
+</html>
