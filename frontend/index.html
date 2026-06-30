@@ -269,7 +269,10 @@ tbody td{padding:5px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap;over
 </div>
 
 <script>
-const API_BASE = window.API_BASE_URL || "http://localhost:8000";
+// Vazio = usa a própria origem da página (funciona em qualquer máquina da
+// rede quando o backend serve o frontend). Defina window.API_BASE_URL antes
+// deste script só se a API estiver em outro host/porta.
+const API_BASE = window.API_BASE_URL || "";
 
 let _payload = null;
 let _curRows = [];
