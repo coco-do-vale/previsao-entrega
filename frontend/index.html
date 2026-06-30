@@ -196,6 +196,7 @@ tbody td{padding:5px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap;over
       </label>
     </div>
     <div class="topbar-user">
+      <span id="atualizadoEm" style="font-size:10px;color:#93c5fd"></span>
       <span id="userEmail"></span>
       <button id="fullscreenBtn" type="button" title="Tela cheia (F11)">⛶</button>
       <button id="logoutBtn" type="button">Sair</button>
@@ -345,7 +346,11 @@ document.addEventListener("fullscreenchange", () => {
   ajustarEscala();
 });
 
+let _dataBaseAtual = null;
+const AUTO_REFRESH_MS = 60000;
+
 async function carregar(dataBase) {
+  _dataBaseAtual = dataBase || null;
   try {
     const qs = dataBase ? `?data_base=${dataBase}` : "";
     const res = await fetch(`${API_BASE}/api/previsao-entregas${qs}`);
@@ -358,6 +363,8 @@ async function carregar(dataBase) {
     document.getElementById("loading").style.display = "none";
     document.getElementById("app").style.display = "flex";
     ajustarEscala();
+    const el = document.getElementById("atualizadoEm");
+    if (el) el.textContent = "Atualizado às " + new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   } catch (e) {
     document.getElementById("loading").textContent =
       "Erro ao carregar dados: " + e.message + " (verifique se a API está acessível)";
@@ -838,7 +845,10 @@ document.getElementById("kpiBar").addEventListener("click", (e) => {
 });
 
 (async () => {
-  if (await checarSessao()) carregar();
+  if (await checarSessao()) {
+    carregar();
+    setInterval(() => carregar(_dataBaseAtual), AUTO_REFRESH_MS);
+  }
 })();
 </script>
 </body>

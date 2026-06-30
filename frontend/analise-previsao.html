@@ -220,22 +220,28 @@ async function carregar() {
   }
 }
 
+function repopularSelect(id, valores, formatarLabel) {
+  const sel = document.getElementById(id);
+  const atual = sel.value;
+  sel.innerHTML = '<option value="">Todos</option>' + valores.map(v => `<option value="${v}">${formatarLabel ? formatarLabel(v) : v}</option>`).join("");
+  if ([...sel.options].some(o => o.value === atual)) sel.value = atual;
+}
+
 function popularFiltrosLaterais() {
   const mesesAnos = [...new Set(_todas.map(r => r.DT_PREVISTA_CLIENTE_FINAL ? r.DT_PREVISTA_CLIENTE_FINAL.slice(0, 7) : null).filter(Boolean))].sort();
-  const selMA = document.getElementById("fMesAno");
-  selMA.innerHTML = '<option value="">Todos</option>' + mesesAnos.map(ma => {
+  repopularSelect("fMesAno", mesesAnos, (ma) => {
     const [ano, mes] = ma.split("-");
-    return `<option value="${ma}">${MESES[Number(mes) - 1]}/${ano}</option>`;
-  }).join("");
+    return `${MESES[Number(mes) - 1]}/${ano}`;
+  });
 
   const ufs = [...new Set(_todas.map(r => r.UF_CLIENTE).filter(Boolean))].sort();
-  document.getElementById("fUf").innerHTML = '<option value="">Todos</option>' + ufs.map(u => `<option value="${u}">${u}</option>`).join("");
+  repopularSelect("fUf", ufs);
 
   const transpDireta = [...new Set(_todas.filter(r => r.TIPO_FLUXO === "ENTREGA DIRETA").map(r => r.TRANSP_PRINCIPAL).filter(Boolean))].sort();
-  document.getElementById("fTranspDireta").innerHTML = '<option value="">Todos</option>' + transpDireta.map(t => `<option value="${t}">${t}</option>`).join("");
+  repopularSelect("fTranspDireta", transpDireta);
 
   const transpRedesp = [...new Set(_todas.map(r => r.TRANSP_REDESPACHO).filter(Boolean))].sort();
-  document.getElementById("fTranspRedesp").innerHTML = '<option value="">Todos</option>' + transpRedesp.map(t => `<option value="${t}">${t}</option>`).join("");
+  repopularSelect("fTranspRedesp", transpRedesp);
 }
 
 function popularDias() {
@@ -464,6 +470,7 @@ document.getElementById("exBtn").addEventListener("click", () => {
 });
 
 carregar();
+setInterval(carregar, 60000);
 </script>
 </body>
 </html>
