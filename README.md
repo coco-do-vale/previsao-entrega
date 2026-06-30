@@ -169,3 +169,45 @@ git push
 
 **Nunca commitar** `backend/.env`, `backend/auth.db` ou
 `backend/reset_pendentes.log` — já estão no `.gitignore`.
+
+## Checklist — migrar para o servidor definitivo da empresa
+
+Hoje o backend roda provisoriamente num notebook (ver "Pontos de atenção"
+acima). Quando a TI liberar a máquina/VM definitiva, seguir esta ordem:
+
+### 1. Preparar o servidor
+- [ ] Windows com Python 3.x instalado
+- [ ] ODBC Driver 18 for SQL Server instalado
+- [ ] Acesso de rede liberado para o SQL Server (`181.41.170.237:1319`, ou
+      o endereço atual — confirmar com a TI)
+- [ ] Máquina configurada para **nunca dormir/hibernar** (é ela que vai
+      ficar de pé 24/7)
+
+### 2. Deploy
+- [ ] `git clone https://github.com/coco-do-vale/previsao-entrega.git`
+- [ ] Criar `backend/.env` com as credenciais reais (não vem no clone —
+      copiar de `backend/.env.example` e preencher)
+- [ ] Setar `DEBUG=false` no `.env`
+- [ ] Corrigir/remover `FRONTEND_ORIGIN` (resquício de quando frontend e
+      backend eram servidos separados — hoje não é mais necessário)
+- [ ] `cd backend && python -m venv venv && venv\Scripts\activate`
+- [ ] `pip install -r requirements.txt`
+- [ ] Rodar `python discover_schema.py` pra confirmar que a estrutura do
+      banco é a mesma (se a TI migrou pra outro servidor/instância)
+- [ ] Rodar `instalar-servico.ps1` **como Administrador** (registra o
+      serviço Windows + libera o firewall)
+- [ ] Testar em `http://<nome-ou-ip-do-servidor>:8000/` de outra máquina
+      da rede
+
+### 3. Antes de liberar pro time todo
+- [ ] Configurar SMTP (provavelmente Office 365/Exchange da empresa) para
+      o "esqueci minha senha" enviar e-mail de verdade — hoje é manual
+      (`backend/reset_pendentes.log`)
+- [ ] Adicionar algum rate-limit/bloqueio no login (hoje não existe)
+- [ ] Definir rotina de backup do `backend/auth.db` (cópia periódica já
+      resolve — é onde ficam as contas de usuário)
+- [ ] Conferir de novo que `DEBUG=false` está ativo
+
+### 4. Recorrente (não esquecer)
+- [ ] **Todo início de ano**: atualizar `F2_EMISSAO >= 'AAAA0101'` em
+      `backend/app/services/sql_queries.py` (hoje fixo em `20260101`)
