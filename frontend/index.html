@@ -45,7 +45,7 @@ body{font-family:system-ui,sans-serif;padding:8px;background:#f0f2f5;font-size:1
 .kv{font-size:22px;font-weight:800;margin:4px 0}
 .ks{font-size:9px;opacity:.75}
 
-.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-auto-rows:1fr;gap:8px;flex:1;min-height:0}
+.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
 .col{background:#fff;border-radius:10px;overflow:hidden;border:2px solid #e0e0e0;cursor:pointer;transition:box-shadow .15s;display:flex;flex-direction:column}
 .col:hover{box-shadow:0 4px 12px rgba(0,0,0,.15)}
 .col.pend{border-color:#dc2626}
@@ -314,11 +314,39 @@ async function carregar(dataBase) {
     renderGrid();
     document.getElementById("loading").style.display = "none";
     document.getElementById("app").style.display = "flex";
+    ajustarEscala();
   } catch (e) {
     document.getElementById("loading").textContent =
       "Erro ao carregar dados: " + e.message + " (verifique se a API está acessível)";
   }
 }
+
+// Encolhe o painel inteiro (proporcionalmente) se o conteúdo for mais alto
+// que a tela disponível, pra nunca cortar/esconder informação nem precisar
+// de barra de rolagem. Se couber, não mexe em nada.
+function ajustarEscala() {
+  const app = document.getElementById("app");
+  if (app.style.display === "none") return;
+  app.style.transform = "none";
+  app.style.width = "";
+  requestAnimationFrame(() => {
+    const rect = app.getBoundingClientRect();
+    const disponivel = window.innerHeight - rect.top - 8;
+    const necessario = app.scrollHeight;
+    if (necessario > disponivel && disponivel > 50) {
+      const fator = disponivel / necessario;
+      app.style.transformOrigin = "top left";
+      app.style.transform = `scale(${fator})`;
+      app.style.width = `${100 / fator}%`;
+    }
+  });
+}
+
+let _resizeTimer = null;
+window.addEventListener("resize", () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(ajustarEscala, 150);
+});
 
 function popularFiltrosData() {
   const hoje = new Date();
