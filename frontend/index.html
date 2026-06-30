@@ -23,6 +23,12 @@ body{font-family:system-ui,sans-serif;padding:8px;background:#f0f2f5;font-size:1
 .topbar-filters label{display:flex;flex-direction:column;font-size:11px;font-weight:600;color:#cbd5e1;gap:4px}
 .topbar-filters select{background:#1e3a5f;color:#fff;border:none;border-bottom:2px solid #fff;font-size:13px;font-weight:600;padding:2px 4px 4px;min-width:110px;cursor:pointer}
 .topbar-filters select:focus{outline:none;border-bottom-color:#60a5fa}
+.topbar-user{display:flex;align-items:center;gap:10px;margin-left:24px;padding-left:24px;border-left:1px solid rgba(255,255,255,.25)}
+#userEmail{font-size:11px;color:#cbd5e1}
+#logoutBtn{border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;cursor:pointer;font-size:11px;padding:5px 12px;border-radius:6px;font-weight:600}
+#logoutBtn:hover{background:rgba(255,255,255,.12)}
+#fullscreenBtn{border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;cursor:pointer;font-size:14px;padding:4px 10px;border-radius:6px;line-height:1}
+#fullscreenBtn:hover{background:rgba(255,255,255,.12)}
 
 .fat-bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
 .fat{border-radius:8px;padding:16px 14px;color:#fff;min-height:96px;display:flex;flex-direction:column;justify-content:center;border:2px solid}
@@ -93,8 +99,6 @@ body{font-family:system-ui,sans-serif;padding:8px;background:#f0f2f5;font-size:1
 .pill-atr{background:#fee2e2;color:#dc2626}
 .pill-lbl{font-size:9px;display:block;font-weight:600;opacity:.8;margin-top:2px}
 
-.footer{text-align:left;padding:14px 0 6px 4px;font-size:11px;color:#9ca3af}
-.footer strong{color:#6b7280;font-weight:700}
 
 #overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:150}
 #overlay.open{display:block}
@@ -191,11 +195,15 @@ tbody td{padding:5px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap;over
         <select id="fDia"><option value="">Todos</option></select>
       </label>
     </div>
+    <div class="topbar-user">
+      <span id="userEmail"></span>
+      <button id="fullscreenBtn" type="button" title="Tela cheia (F11)">⛶</button>
+      <button id="logoutBtn" type="button">Sair</button>
+    </div>
   </div>
   <div class="fat-bar" id="fatBar"></div>
   <div class="kpi-bar" id="kpiBar"></div>
   <div class="grid" id="grid"></div>
-  <div class="footer">Desenvolvido por <strong>Julio Cesar</strong></div>
 </div>
 
 <div id="overlay"></div>
@@ -303,10 +311,45 @@ function mesAtualAbrev() {
   return MESES_ABREV[new Date(iso + "T00:00:00").getMonth()];
 }
 
+function irParaLogin() {
+  window.location.href = "login.html?voltar=" + encodeURIComponent(window.location.pathname.split("/").pop());
+}
+
+async function checarSessao() {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/me`, { credentials: "include" });
+    if (!res.ok) { irParaLogin(); return false; }
+    const data = await res.json();
+    document.getElementById("userEmail").textContent = data.email;
+    return true;
+  } catch (e) {
+    irParaLogin();
+    return false;
+  }
+}
+
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  await fetch(`${API_BASE}/api/auth/logout`, { method: "POST", credentials: "include" });
+  irParaLogin();
+});
+
+document.getElementById("fullscreenBtn").addEventListener("click", () => {
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+  } else {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+});
+document.addEventListener("fullscreenchange", () => {
+  document.getElementById("fullscreenBtn").textContent = document.fullscreenElement ? "⤓" : "⛶";
+  ajustarEscala();
+});
+
 async function carregar(dataBase) {
   try {
     const qs = dataBase ? `?data_base=${dataBase}` : "";
     const res = await fetch(`${API_BASE}/api/previsao-entregas${qs}`);
+    if (res.status === 401) { irParaLogin(); return; }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     _payload = await res.json();
     renderFaturamento();
@@ -794,7 +837,9 @@ document.getElementById("kpiBar").addEventListener("click", (e) => {
   if (e.target.closest("#kpiOtd")) window.location.href = "analise-previsao.html";
 });
 
-carregar();
+(async () => {
+  if (await checarSessao()) carregar();
+})();
 </script>
 </body>
 </html>

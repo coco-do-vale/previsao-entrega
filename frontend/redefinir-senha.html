@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Redefinir senha — Dashboard Logístico</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,sans-serif}
+html,body{height:100%}
+body{background:#1e3a5f;color:#fff;display:flex;align-items:center;justify-content:center}
+.caixa{width:380px;max-width:90vw;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:26px 28px}
+.logo{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:700;font-size:28px;line-height:1;text-align:center;margin-bottom:18px}
+.logo span{display:block;font-size:13px;font-weight:400}
+.titulo{font-size:14px;font-weight:700;margin-bottom:16px;text-align:center}
+.campo{margin-bottom:14px}
+.campo label{display:block;font-size:11px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
+.campo input{width:100%;padding:9px 11px;border-radius:6px;border:none;font-size:13px;background:#fff;color:#111}
+.btn-principal{width:100%;padding:10px;border:none;border-radius:6px;background:#2563eb;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:6px}
+.btn-principal:hover{background:#1d4ed8}
+.msg{font-size:12px;margin-bottom:10px;padding:8px 10px;border-radius:6px;display:none}
+.msg.erro{display:block;background:#7f1d1d;color:#fecaca}
+.msg.ok{display:block;background:#14532d;color:#bbf7d0}
+.links{text-align:center;margin-top:14px;font-size:11px}
+.links a{color:#93c5fd;text-decoration:none}
+.links a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="caixa">
+  <div class="logo">Coco<span>do Vale</span></div>
+  <div class="titulo">Definir nova senha</div>
+  <div id="msg" class="msg"></div>
+  <form id="form">
+    <div class="campo"><label>Nova senha (mín. 8 caracteres)</label><input type="password" id="senha1" minlength="8" required></div>
+    <div class="campo"><label>Confirmar nova senha</label><input type="password" id="senha2" minlength="8" required></div>
+    <button type="submit" class="btn-principal">Salvar nova senha</button>
+  </form>
+  <div class="links"><a href="login.html">Voltar ao login</a></div>
+</div>
+
+<script>
+const API_BASE = window.API_BASE_URL || "";
+const token = new URLSearchParams(window.location.search).get("token");
+
+function mostrarMsg(texto, tipo) {
+  const el = document.getElementById("msg");
+  el.textContent = texto;
+  el.className = "msg " + tipo;
+}
+
+if (!token) {
+  mostrarMsg("Link inválido — faltou o token. Peça um novo em \"Esqueci minha senha\".", "erro");
+  document.getElementById("form").style.display = "none";
+}
+
+document.getElementById("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const senha1 = document.getElementById("senha1").value;
+  const senha2 = document.getElementById("senha2").value;
+  if (senha1 !== senha2) {
+    mostrarMsg("As senhas não conferem.", "erro");
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/redefinir-senha`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, nova_senha: senha1 }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Falha ao redefinir senha");
+    mostrarMsg("Senha redefinida! Redirecionando para o login...", "ok");
+    setTimeout(() => { window.location.href = "login.html"; }, 1800);
+  } catch (err) {
+    mostrarMsg(err.message, "erro");
+  }
+});
+</script>
+</body>
+</html>

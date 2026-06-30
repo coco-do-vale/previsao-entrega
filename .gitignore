@@ -8,6 +8,10 @@ venv/
 .env
 *.env
 
+# Banco local de autenticação e log de redefinição de senha
+backend/auth.db
+backend/reset_pendentes.log
+
 # IDE
 .vscode/
 .idea/

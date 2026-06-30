@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Login — Dashboard Logístico</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,sans-serif}
+html,body{height:100%}
+body{
+  background:#1e3a5f;
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  overflow:hidden;
+}
+.stripes{position:absolute;top:0;right:0;bottom:0;width:140px;
+  background:repeating-linear-gradient(90deg,#16315099 0px,#16315099 10px,#1e3a5f 10px,#1e3a5f 24px,#27486f 24px,#27486f 30px,#1e3a5f 30px,#1e3a5f 44px);
+  pointer-events:none}
+.conteudo{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;position:relative;z-index:1}
+.logo{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:700;font-size:56px;line-height:1;text-align:center;text-shadow:0 2px 6px rgba(0,0,0,.25)}
+.logo span{display:block;font-size:24px;font-weight:400}
+.linha{width:880px;max-width:90vw;height:1px;background:#5b87b8;margin:22px 0}
+.caixa{width:380px;max-width:90vw;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:26px 28px}
+.titulo-baixo{font-size:26px;font-weight:800;margin-top:22px;text-align:center}
+.subtitulo-baixo{font-size:13px;opacity:.75;margin-top:4px;text-align:center}
+.rodape{display:flex;justify-content:space-between;align-items:center;padding:10px 18px;background:#142a45;font-size:11px;opacity:.8;position:relative;z-index:1}
+
+.campo{margin-bottom:14px}
+.campo label{display:block;font-size:11px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
+.campo input{width:100%;padding:9px 11px;border-radius:6px;border:none;font-size:13px;background:#fff;color:#111}
+.btn-principal{width:100%;padding:10px;border:none;border-radius:6px;background:#2563eb;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:6px}
+.btn-principal:hover{background:#1d4ed8}
+.btn-principal:disabled{opacity:.6;cursor:default}
+.links{display:flex;justify-content:space-between;margin-top:12px;font-size:11px}
+.links a{color:#93c5fd;text-decoration:none;cursor:pointer}
+.links a:hover{text-decoration:underline}
+.msg{font-size:12px;margin-bottom:10px;padding:8px 10px;border-radius:6px;display:none}
+.msg.erro{display:block;background:#7f1d1d;color:#fecaca}
+.msg.ok{display:block;background:#14532d;color:#bbf7d0}
+.form{display:none}
+.form.ativo{display:block}
+</style>
+</head>
+<body>
+<div class="stripes"></div>
+
+<div class="conteudo">
+  <div class="logo">Coco<span>do Vale</span></div>
+  <div class="linha"></div>
+
+  <div class="caixa">
+    <div id="msg" class="msg"></div>
+
+    <form class="form ativo" id="formLogin">
+      <div class="campo"><label>E-mail</label><input type="email" id="loginEmail" placeholder="voce@cocodovale.com.br" required></div>
+      <div class="campo"><label>Senha</label><input type="password" id="loginSenha" required></div>
+      <button type="submit" class="btn-principal">Entrar</button>
+      <div class="links"><a id="irCadastro">Criar conta</a><a id="irEsqueci">Esqueci minha senha</a></div>
+    </form>
+
+    <form class="form" id="formCadastro">
+      <div class="campo"><label>E-mail (@cocodovale.com.br)</label><input type="email" id="cadEmail" placeholder="voce@cocodovale.com.br" required></div>
+      <div class="campo"><label>Senha (mín. 8 caracteres)</label><input type="password" id="cadSenha" minlength="8" required></div>
+      <div class="campo"><label>Confirmar senha</label><input type="password" id="cadSenha2" minlength="8" required></div>
+      <button type="submit" class="btn-principal">Criar conta</button>
+      <div class="links"><a id="irLoginDeCadastro">Já tenho conta</a><span></span></div>
+    </form>
+
+    <form class="form" id="formEsqueci">
+      <div class="campo"><label>E-mail da conta</label><input type="email" id="esqEmail" placeholder="voce@cocodovale.com.br" required></div>
+      <button type="submit" class="btn-principal">Enviar link de redefinição</button>
+      <div class="links"><a id="irLoginDeEsqueci">Voltar ao login</a><span></span></div>
+    </form>
+  </div>
+
+  <div class="titulo-baixo">Dashboard Logístico</div>
+  <div class="subtitulo-baixo">Análise de Entrega</div>
+</div>
+
+<div class="rodape">
+  <span>Confidencial · Uso interno</span>
+  <span>Desenvolvedor · Julio Cesar</span>
+</div>
+
+<script>
+const API_BASE = window.API_BASE_URL || "";
+
+function mostrarForm(id) {
+  document.querySelectorAll(".form").forEach(f => f.classList.remove("ativo"));
+  document.getElementById(id).classList.add("ativo");
+  ocultarMsg();
+}
+
+function mostrarMsg(texto, tipo) {
+  const el = document.getElementById("msg");
+  el.textContent = texto;
+  el.className = "msg " + tipo;
+}
+function ocultarMsg() {
+  const el = document.getElementById("msg");
+  el.className = "msg";
+  el.textContent = "";
+}
+
+document.getElementById("irCadastro").addEventListener("click", () => mostrarForm("formCadastro"));
+document.getElementById("irEsqueci").addEventListener("click", () => mostrarForm("formEsqueci"));
+document.getElementById("irLoginDeCadastro").addEventListener("click", () => mostrarForm("formLogin"));
+document.getElementById("irLoginDeEsqueci").addEventListener("click", () => mostrarForm("formLogin"));
+
+document.getElementById("formLogin").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  ocultarMsg();
+  const email = document.getElementById("loginEmail").value;
+  const senha = document.getElementById("loginSenha").value;
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ email, senha }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Falha no login");
+    const destino = new URLSearchParams(window.location.search).get("voltar") || "index.html";
+    window.location.href = destino;
+  } catch (err) {
+    mostrarMsg(err.message, "erro");
+  }
+});
+
+document.getElementById("formCadastro").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  ocultarMsg();
+  const email = document.getElementById("cadEmail").value;
+  const senha = document.getElementById("cadSenha").value;
+  const senha2 = document.getElementById("cadSenha2").value;
+  if (senha !== senha2) {
+    mostrarMsg("As senhas não conferem.", "erro");
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/registrar`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, senha }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Falha no cadastro");
+    mostrarMsg("Conta criada! Já pode entrar.", "ok");
+    mostrarForm("formLogin");
+    document.getElementById("loginEmail").value = email;
+  } catch (err) {
+    mostrarMsg(err.message, "erro");
+  }
+});
+
+document.getElementById("formEsqueci").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  ocultarMsg();
+  const email = document.getElementById("esqEmail").value;
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/esqueci-senha`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Falha ao solicitar redefinição");
+    mostrarMsg(data.mensagem, "ok");
+  } catch (err) {
+    mostrarMsg(err.message, "erro");
+  }
+});
+</script>
+</body>
+</html>

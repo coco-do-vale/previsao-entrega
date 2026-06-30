@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from datetime import date
 import io
 import csv
 import traceback
 from fastapi.responses import StreamingResponse
 
+from app.routers.auth import exigir_login
 from app.services.logica_previsao import (
     montar_payload_completo, carregar_base, montar_tabela_periodo,
     montar_tabela_mes_com_romaneio, montar_tabela_mes_sem_romaneio,
@@ -13,7 +14,7 @@ from app.services.logica_previsao import (
     calcular_datas_referencia,
 )
 
-router = APIRouter(prefix="/api", tags=["previsao-entregas"])
+router = APIRouter(prefix="/api", tags=["previsao-entregas"], dependencies=[Depends(exigir_login)])
 
 PERIODOS_VALIDOS = {
     "pendentes", "d1", "d2", "d3", "d4", "d5",
@@ -107,7 +108,3 @@ def get_analise_previsao():
     return montar_analise_previsao(df)
 
 
-@router.get("/health")
-def health_check():
-    """Para monitoramento (Vercel/uptime check)."""
-    return {"status": "ok"}

@@ -95,6 +95,7 @@ tr:last-child td{border-bottom:none}
       <button id="backBtn" type="button" title="Voltar ao painel principal">←</button>
       <div class="sb-logo">Coco<span>do Vale</span></div>
     </div>
+    <button id="logoutBtn" type="button" style="border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;cursor:pointer;font-size:11px;padding:5px 10px;border-radius:6px;font-weight:600">Sair</button>
     <div class="sb-field">
       <label>Mês/Ano</label>
       <select id="fMesAno"><option value="">Todos</option></select>
@@ -189,9 +190,24 @@ function round1(n) {
 
 const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
+function irParaLogin() {
+  window.location.href = "login.html?voltar=analise-previsao.html";
+}
+
+async function checarSessao() {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/me`, { credentials: "include" });
+    return res.ok;
+  } catch (e) {
+    return false;
+  }
+}
+
 async function carregar() {
+  if (!(await checarSessao())) { irParaLogin(); return; }
   try {
     const res = await fetch(`${API_BASE}/api/analise-previsao`);
+    if (res.status === 401) { irParaLogin(); return; }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     _todas = await res.json();
     popularFiltrosLaterais();
@@ -401,6 +417,10 @@ function aplicarFiltrosTabela() {
 }
 
 document.getElementById("backBtn").addEventListener("click", () => { window.location.href = "index.html"; });
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  await fetch(`${API_BASE}/api/auth/logout`, { method: "POST", credentials: "include" });
+  irParaLogin();
+});
 
 document.getElementById("fMesAno").addEventListener("change", () => { popularDias(); aplicarFiltrosPrincipais(); });
 document.getElementById("fDia").addEventListener("change", aplicarFiltrosPrincipais);
