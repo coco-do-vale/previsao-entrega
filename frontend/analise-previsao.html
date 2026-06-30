@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Análise de Previsão de Entregas</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,sans-serif}
+body{background:#f5f5f3;color:#2C2C2A}
+#loading{text-align:center;padding:40px;color:#6b7280}
+#layout{display:none}
+#layout.open{display:flex;min-height:100vh}
+
+/* Barra lateral */
+#sidebar{width:230px;flex-shrink:0;background:#1e3a5f;color:#fff;padding:16px;display:flex;flex-direction:column;gap:14px}
+.sb-brand{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+#backBtn{border:none;background:rgba(255,255,255,.15);color:#fff;cursor:pointer;font-size:16px;padding:4px 9px;border-radius:6px}
+#backBtn:hover{background:rgba(255,255,255,.28)}
+.sb-logo{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:700;font-size:15px;line-height:1}
+.sb-logo span{display:block;font-size:9px;font-weight:400}
+.sb-field label{display:block;font-size:10px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
+.sb-field select{width:100%;background:#fff;color:#111;border:none;border-radius:6px;padding:7px 8px;font-size:12px;cursor:pointer}
+.sb-otd-group{display:flex;flex-direction:column;gap:6px;background:rgba(255,255,255,.08);padding:8px 10px;border-radius:8px}
+.sb-otd-group label{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;cursor:pointer}
+
+/* Conteúdo principal */
+#main{flex:1;padding:14px 18px;overflow-x:auto}
+.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.htit{font-size:15px;font-weight:700;color:#111}
+.hsub{font-size:11px;color:#888}
+.kg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-bottom:8px}
+.kc{border-radius:8px;padding:9px 11px;border:1px solid rgba(0,0,0,.08);position:relative;cursor:help}
+.kc:hover::after{content:attr(data-tip);position:absolute;top:100%;left:0;margin-top:6px;background:#2C2C2A;color:#fff;padding:8px 11px;border-radius:6px;font-size:11px;font-weight:500;white-space:normal;width:210px;z-index:50;box-shadow:0 6px 16px rgba(0,0,0,.25);line-height:1.4}
+.kv{font-size:22px;font-weight:800;line-height:1;margin-bottom:3px}
+.kl{font-size:11px;opacity:.8;margin-bottom:3px}
+.kr{font-size:12px;font-weight:700;opacity:.9;margin-top:2px}
+.ks{font-size:10px;margin-top:1px;opacity:.65}
+.k0{background:#fff;color:#111}.k1{background:#d1fae5;color:#065f46}.k2{background:#e0f2fe;color:#0c4a6e}
+.k3{background:#fee2e2;color:#991b1b}.k4{background:#fef3c7;color:#92400e}.k5{background:#ede9fe;color:#4c1d95}
+.bar-row{display:flex;align-items:center;gap:10px;background:#fff;border-radius:8px;padding:7px 12px;margin-bottom:8px;border:1px solid #e5e7eb}
+.bt{flex:1;height:10px;display:flex;border-radius:5px;overflow:hidden;gap:1px;background:#f0f0ee}
+.b1{background:#059669}.b2{background:#0ea5e9}.b3{background:#ef4444}.b4{background:#f59e0b}
+.leg{display:flex;gap:10px;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:4px;font-size:11px;color:#555;white-space:nowrap}
+.ld{width:8px;height:8px;border-radius:50%}
+.otd-box{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:9px 12px;margin-bottom:8px}
+.otd-ttl{font-size:11px;font-weight:700;color:#555;margin-bottom:8px}
+.otd-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.otd-row:last-child{margin-bottom:0}
+.otd-lbl{font-size:11px;width:115px;flex-shrink:0;color:#444}
+.otd-track{flex:1;background:#f0f0ee;border-radius:4px;height:9px;overflow:hidden}
+.otd-fill{height:9px;border-radius:4px}
+.otd-pct{font-size:12px;font-weight:700;width:46px;text-align:right;flex-shrink:0}
+.otd-cnt{font-size:10px;color:#999;width:70px;flex-shrink:0;white-space:nowrap}
+.otd-bdg{display:inline-block;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:700}
+.bdg-rl{background:#ede9fe;color:#4c1d95}.bdg-ok{background:#d1fae5;color:#065f46}.bdg-rs{background:#fee2e2;color:#991b1b}
+.otd-note{font-size:10px;color:#aaa;margin-top:6px;border-top:.5px solid #f0f0f0;padding-top:6px}
+.otd-range{background:#fef3c7;border-radius:5px;padding:5px 9px;font-size:11px;color:#92400e;margin-top:6px;border-top:.5px solid #f0f0f0;padding-top:6px}
+.tbl-hdr{display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:#fff;border:1px solid #e5e7eb;border-bottom:none;border-radius:8px 8px 0 0}
+.tbl-hdr b{font-size:13px}
+.tbl-hdr small{font-size:11px;color:#888}
+#exBtn{border:none;background:#2563eb;color:#fff;cursor:pointer;font-size:12px;padding:5px 12px;border-radius:6px;font-weight:600}
+#exBtn:hover{background:#1d4ed8}
+#flt-bar{padding:7px 12px;background:#fff;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.fb{border:1px solid #e5e7eb;background:#f9fafb;cursor:pointer;font-size:11px;padding:4px 11px;border-radius:20px;color:#555;font-weight:500;white-space:nowrap}
+.fb:hover{background:#f0f0f0}
+.fb.fa{border-color:#2563eb;background:#eff6ff;color:#2563eb;font-weight:700}
+#flt-bar select{height:26px;padding:0 9px;font-size:11px;border:1px solid #e5e7eb;border-radius:20px;background:#f9fafb;color:#555;margin-left:6px}
+.tbl-wrap{overflow:auto;max-height:65vh;border:1px solid #e5e7eb;border-radius:0 0 8px 8px;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead th{padding:5px 8px;text-align:left;font-weight:700;color:#555;font-size:10px;background:#f9fafb;border-bottom:1px solid #e5e7eb;white-space:nowrap;position:sticky;top:0;z-index:2}
+td{padding:5px 8px;border-bottom:1px solid #f0f0f0;vertical-align:middle;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.nf{font-weight:700;color:#111}
+.cl{max-width:160px;overflow:hidden;text-overflow:ellipsis}
+.sm{max-width:130px;overflow:hidden;text-overflow:ellipsis;color:#555}
+.dt{color:#374151;font-weight:500}
+.fl{font-size:11px;font-weight:600;color:#6b7280;text-align:center}
+.vl{text-align:right;font-weight:700}
+.uf{background:#e5e7eb;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;color:#374151}
+.st{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+.nfe{text-align:center;font-size:10px;color:#374151;font-weight:600}
+</style>
+</head>
+<body>
+
+<div id="loading">Carregando análise...</div>
+
+<div id="layout">
+  <div id="sidebar">
+    <div class="sb-brand">
+      <button id="backBtn" type="button" title="Voltar ao painel principal">←</button>
+      <div class="sb-logo">Coco<span>do Vale</span></div>
+    </div>
+    <div class="sb-field">
+      <label>Mês/Ano</label>
+      <select id="fMesAno"><option value="">Todos</option></select>
+    </div>
+    <div class="sb-field">
+      <label>Dia</label>
+      <select id="fDia"><option value="">Todos</option></select>
+    </div>
+    <div class="sb-otd-group">
+      <label><input type="checkbox" id="chkMostrarOTD" checked> Mostrar OTD</label>
+      <label><input type="checkbox" id="chkOcultarOTD"> Ocultar OTD</label>
+    </div>
+    <div class="sb-field">
+      <label>UF</label>
+      <select id="fUf"><option value="">Todos</option></select>
+    </div>
+    <div class="sb-field">
+      <label>Transp. Direta</label>
+      <select id="fTranspDireta"><option value="">Todos</option></select>
+    </div>
+    <div class="sb-field">
+      <label>Transp. Redespacho</label>
+      <select id="fTranspRedesp"><option value="">Todos</option></select>
+    </div>
+  </div>
+
+  <div id="main">
+    <div class="hdr">
+      <div>
+        <div class="htit">🚚 Análise de Previsão de Entregas</div>
+        <div class="hsub" id="dtLabel">Todas as datas</div>
+      </div>
+      <div class="hsub" id="agora"></div>
+    </div>
+
+    <div class="kg" id="kpiGrid"></div>
+
+    <div class="bar-row">
+      <div class="bt" id="barTotal"></div>
+      <div class="leg" id="legenda"></div>
+    </div>
+
+    <div id="otdBox"></div>
+
+    <div class="tbl-hdr">
+      <div><b>Notas fiscais</b><small style="margin-left:8px">máx. 200 linhas · por data prevista</small></div>
+      <button id="exBtn" type="button">📊 Exportar Excel</button>
+    </div>
+    <div id="flt-bar">
+      <button class="fb fa" data-st="" type="button">Todos</button>
+      <button class="fb" data-st="ant" type="button">▲ Antecipada</button>
+      <button class="fb" data-st="prz" type="button">✓ No prazo</button>
+      <button class="fb" data-st="atr" type="button">▼ Atrasada</button>
+      <button class="fb" data-st="pend" type="button">⏳ Pendente</button>
+      <select id="fNfe"><option value="">NF Entrada: Todos</option></select>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>NF</th><th>Cliente</th><th>Cidade</th><th>UF</th><th>Fluxo</th><th>Transportadora</th><th>Redespacho</th><th>Valor</th><th>Prev. Entrega</th><th>DT Entrega</th><th>Delta</th><th>Status</th><th>NF Entrada</th></tr>
+        </thead>
+        <tbody id="tbBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = window.API_BASE_URL || "";
+
+let _todas = [];
+let _filtradas = [];
+let _statusAtivo = "";
+
+function fmtValor(v) {
+  if (v == null) return "R$ 0";
+  const av = Math.abs(v);
+  if (av >= 1000000) return "R$ " + (v / 1000000).toFixed(1) + "M";
+  if (av >= 1000) return "R$ " + (v / 1000).toFixed(1) + "K";
+  return "R$ " + Math.round(v).toLocaleString("pt-BR");
+}
+
+function fmtData(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso + "T00:00:00");
+  return String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0");
+}
+
+function round1(n) {
+  return Math.round(n * 10) / 10;
+}
+
+const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+
+async function carregar() {
+  try {
+    const res = await fetch(`${API_BASE}/api/analise-previsao`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    _todas = await res.json();
+    popularFiltrosLaterais();
+    aplicarFiltrosPrincipais();
+    document.getElementById("agora").textContent = new Date().toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" });
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("layout").classList.add("open");
+  } catch (e) {
+    document.getElementById("loading").textContent = "Erro ao carregar análise: " + e.message;
+  }
+}
+
+function popularFiltrosLaterais() {
+  const mesesAnos = [...new Set(_todas.map(r => r.DT_PREVISTA_CLIENTE_FINAL ? r.DT_PREVISTA_CLIENTE_FINAL.slice(0, 7) : null).filter(Boolean))].sort();
+  const selMA = document.getElementById("fMesAno");
+  selMA.innerHTML = '<option value="">Todos</option>' + mesesAnos.map(ma => {
+    const [ano, mes] = ma.split("-");
+    return `<option value="${ma}">${MESES[Number(mes) - 1]}/${ano}</option>`;
+  }).join("");
+
+  const ufs = [...new Set(_todas.map(r => r.UF_CLIENTE).filter(Boolean))].sort();
+  document.getElementById("fUf").innerHTML = '<option value="">Todos</option>' + ufs.map(u => `<option value="${u}">${u}</option>`).join("");
+
+  const transpDireta = [...new Set(_todas.filter(r => r.TIPO_FLUXO === "ENTREGA DIRETA").map(r => r.TRANSP_PRINCIPAL).filter(Boolean))].sort();
+  document.getElementById("fTranspDireta").innerHTML = '<option value="">Todos</option>' + transpDireta.map(t => `<option value="${t}">${t}</option>`).join("");
+
+  const transpRedesp = [...new Set(_todas.map(r => r.TRANSP_REDESPACHO).filter(Boolean))].sort();
+  document.getElementById("fTranspRedesp").innerHTML = '<option value="">Todos</option>' + transpRedesp.map(t => `<option value="${t}">${t}</option>`).join("");
+}
+
+function popularDias() {
+  const ma = document.getElementById("fMesAno").value;
+  const selDia = document.getElementById("fDia");
+  const atual = selDia.value;
+  selDia.innerHTML = '<option value="">Todos</option>';
+  if (!ma) return;
+  const [ano, mes] = ma.split("-").map(Number);
+  const ultimoDia = new Date(ano, mes, 0).getDate();
+  for (let d = 1; d <= ultimoDia; d++) {
+    const opt = document.createElement("option");
+    opt.value = String(d).padStart(2, "0");
+    opt.textContent = opt.value;
+    selDia.appendChild(opt);
+  }
+  if (atual) selDia.value = atual;
+}
+
+function aplicarFiltrosPrincipais() {
+  const ma = document.getElementById("fMesAno").value;
+  const dia = document.getElementById("fDia").value;
+  const uf = document.getElementById("fUf").value;
+  const td = document.getElementById("fTranspDireta").value;
+  const tr = document.getElementById("fTranspRedesp").value;
+
+  _filtradas = _todas.filter(r => {
+    if (!r.DT_PREVISTA_CLIENTE_FINAL) return false;
+    if (ma && !r.DT_PREVISTA_CLIENTE_FINAL.startsWith(ma)) return false;
+    if (dia && r.DT_PREVISTA_CLIENTE_FINAL.slice(8, 10) !== dia) return false;
+    if (uf && r.UF_CLIENTE !== uf) return false;
+    if (td && r.TRANSP_PRINCIPAL !== td) return false;
+    if (tr && r.TRANSP_REDESPACHO !== tr) return false;
+    return true;
+  });
+
+  if (ma) {
+    const [ano, mes] = ma.split("-");
+    const label = dia ? `${dia}/${mes}/${ano}` : `${MESES[Number(mes) - 1]}/${ano}`;
+    document.getElementById("dtLabel").textContent = label;
+  } else {
+    document.getElementById("dtLabel").textContent = "Todas as datas";
+  }
+
+  renderKPIs();
+  buildNfeOptions();
+  aplicarFiltrosTabela();
+}
+
+function renderKPIs() {
+  const nfs = _filtradas;
+  const total = nfs.length;
+  let antecipada = 0, noPrazo = 0, atrasadas = 0, pendentes = 0;
+  let valTotal = 0, valAnt = 0, valPrz = 0, valAtr = 0, valPend = 0;
+  nfs.forEach(r => {
+    valTotal += r.VALOR_NF;
+    if (r.status === "ant") { antecipada++; valAnt += r.VALOR_NF; }
+    else if (r.status === "prz") { noPrazo++; valPrz += r.VALOR_NF; }
+    else if (r.status === "atr") { atrasadas++; valAtr += r.VALOR_NF; }
+    else { pendentes++; valPend += r.VALOR_NF; }
+  });
+  const entregues = antecipada + noPrazo + atrasadas;
+  const otdReal = entregues > 0 ? round1((antecipada + noPrazo) / entregues * 100) : 0;
+  const otdOtim = total > 0 ? round1((antecipada + noPrazo + pendentes) / total * 100) : 0;
+  const otdPess = total > 0 ? round1((antecipada + noPrazo) / total * 100) : 0;
+  const valOTD = valAnt + valPrz;
+  const pA = total > 0 ? Math.round(antecipada / total * 100) : 0;
+  const pP = total > 0 ? Math.round(noPrazo / total * 100) : 0;
+  const pAt = total > 0 ? Math.round(atrasadas / total * 100) : 0;
+  const pPe = total > 0 ? Math.round(pendentes / total * 100) : 0;
+
+  document.getElementById("kpiGrid").innerHTML = `
+    <div class="kc k0" data-tip="${total.toLocaleString('pt-BR')} NFs possuem data prevista de entrega, totalizando ${fmtValor(valTotal)}. Esta é a base de 100% para os demais percentuais.">
+      <div class="kv">${total.toLocaleString('pt-BR')}</div><div class="kl">Total previstas</div><div class="kr">${fmtValor(valTotal)}</div><div class="ks">valor total</div></div>
+    <div class="kc k1" data-tip="${antecipada.toLocaleString('pt-BR')} NFs (${pA}% do total) já foram entregues antes da data prevista, somando ${fmtValor(valAnt)}.">
+      <div class="kv">${antecipada.toLocaleString('pt-BR')}</div><div class="kl">Antecipada do prazo</div><div class="kr">${fmtValor(valAnt)}</div><div class="ks">${pA}% do total</div></div>
+    <div class="kc k2" data-tip="${noPrazo.toLocaleString('pt-BR')} NFs (${pP}% do total) foram entregues exatamente na data prevista, somando ${fmtValor(valPrz)}.">
+      <div class="kv">${noPrazo.toLocaleString('pt-BR')}</div><div class="kl">No prazo</div><div class="kr">${fmtValor(valPrz)}</div><div class="ks">${pP}% do total</div></div>
+    <div class="kc k3" data-tip="${atrasadas.toLocaleString('pt-BR')} NFs (${pAt}% do total) foram entregues depois da data prevista, somando ${fmtValor(valAtr)}.">
+      <div class="kv">${atrasadas.toLocaleString('pt-BR')}</div><div class="kl">Atrasadas</div><div class="kr">${fmtValor(valAtr)}</div><div class="ks">${pAt}% do total</div></div>
+    <div class="kc k4" data-tip="${pendentes.toLocaleString('pt-BR')} NFs (${pPe}% do total) ainda não foram entregues, somando ${fmtValor(valPend)}. O destino delas ainda é desconhecido.">
+      <div class="kv">${pendentes.toLocaleString('pt-BR')}</div><div class="kl">Pendentes</div><div class="kr">${fmtValor(valPend)}</div><div class="ks">sem DT entrega</div></div>
+    <div class="kc k5" data-tip="OTD real considera apenas as NFs já entregues: ${(antecipada+noPrazo).toLocaleString('pt-BR')} no prazo de ${entregues.toLocaleString('pt-BR')} entregues = ${otdReal}%. As ${pendentes.toLocaleString('pt-BR')} pendentes não entram nesta conta.">
+      <div class="kv">${otdReal}%</div><div class="kl">OTD real</div><div class="kr">${fmtValor(valOTD)}</div><div class="ks">${(antecipada+noPrazo).toLocaleString('pt-BR')} de ${entregues.toLocaleString('pt-BR')} NFs</div></div>
+  `;
+
+  document.getElementById("barTotal").innerHTML =
+    (pA > 0 ? `<div class="b1" style="flex:${pA}"></div>` : "") +
+    (pP > 0 ? `<div class="b2" style="flex:${pP}"></div>` : "") +
+    (pAt > 0 ? `<div class="b3" style="flex:${pAt}"></div>` : "") +
+    (pPe > 0 ? `<div class="b4" style="flex:${pPe}"></div>` : "");
+  document.getElementById("legenda").innerHTML = `
+    <div class="li"><div class="ld" style="background:#059669"></div>Antecipada (${antecipada.toLocaleString('pt-BR')})</div>
+    <div class="li"><div class="ld" style="background:#0ea5e9"></div>No prazo (${noPrazo.toLocaleString('pt-BR')})</div>
+    <div class="li"><div class="ld" style="background:#ef4444"></div>Atrasadas (${atrasadas.toLocaleString('pt-BR')})</div>
+    <div class="li"><div class="ld" style="background:#f59e0b"></div>Pendentes (${pendentes.toLocaleString('pt-BR')})</div>
+  `;
+
+  const mostrarOTD = document.getElementById("chkMostrarOTD").checked;
+  if (mostrarOTD && pendentes >= 0) {
+    document.getElementById("otdBox").innerHTML = `
+      <div class="otd-box">
+        <div class="otd-ttl">OTD projetado — cenários para as ${pendentes.toLocaleString('pt-BR')} NFs pendentes</div>
+        <div class="otd-row"><div class="otd-lbl"><span class="otd-bdg bdg-rl">OTD real</span><div style="font-size:10px;color:#888;margin-top:1px">apenas entregues</div></div>
+          <div class="otd-track"><div class="otd-fill" style="width:${otdReal}%;background:#7c3aed"></div></div>
+          <div class="otd-pct" style="color:#4c1d95">${otdReal}%</div><div class="otd-cnt">${(antecipada+noPrazo).toLocaleString('pt-BR')} de ${entregues.toLocaleString('pt-BR')}</div></div>
+        <div class="otd-row"><div class="otd-lbl"><span class="otd-bdg bdg-ok">Otimista</span><div style="font-size:10px;color:#888;margin-top:1px">pendentes no prazo</div></div>
+          <div class="otd-track"><div class="otd-fill" style="width:${otdOtim}%;background:#059669"></div></div>
+          <div class="otd-pct" style="color:#065f46">${otdOtim}%</div><div class="otd-cnt">${(antecipada+noPrazo+pendentes).toLocaleString('pt-BR')} de ${total.toLocaleString('pt-BR')}</div></div>
+        <div class="otd-row"><div class="otd-lbl"><span class="otd-bdg bdg-rs">Pessimista</span><div style="font-size:10px;color:#888;margin-top:1px">pendentes atrasam</div></div>
+          <div class="otd-track"><div class="otd-fill" style="width:${otdPess}%;background:#ef4444"></div></div>
+          <div class="otd-pct" style="color:#991b1b">${otdPess}%</div><div class="otd-cnt">${(antecipada+noPrazo).toLocaleString('pt-BR')} de ${total.toLocaleString('pt-BR')}</div></div>
+        <div class="otd-range">Intervalo final provável: entre <strong>${otdPess}%</strong> (pessimista) e <strong>${otdOtim}%</strong> (otimista) — depende das ${pendentes.toLocaleString('pt-BR')} NFs ainda em aberto</div>
+        <div class="otd-note">* OTD real = sobre as ${entregues.toLocaleString('pt-BR')} NFs já entregues. Otimista = todas pendentes chegam no prazo. Pessimista = todas pendentes atrasam.</div>
+      </div>`;
+  } else {
+    document.getElementById("otdBox").innerHTML = "";
+  }
+}
+
+function buildNfeOptions() {
+  const sel = document.getElementById("fNfe");
+  const atual = sel.value;
+  const vals = new Set();
+  let temVazio = false;
+  _filtradas.forEach(r => { if (r.NF_ENTRADA) vals.add(r.NF_ENTRADA); else temVazio = true; });
+  let html = '<option value="">NF Entrada: Todos</option>';
+  if (temVazio) html += '<option value="__EMPTY__">Vazio</option>';
+  [...vals].sort().forEach(v => { html += `<option value="${v}">${v}</option>`; });
+  sel.innerHTML = html;
+  if ([...sel.options].some(o => o.value === atual)) sel.value = atual;
+}
+
+function statusLabel(st) {
+  return { ant: "Antecipada", prz: "No prazo", atr: "Atrasada", pend: "Pendente" }[st] || st;
+}
+function statusBg(st) {
+  return { ant: "#d1fae5", prz: "#e0f2fe", atr: "#fee2e2", pend: "#fef3c7" }[st];
+}
+function statusColor(st) {
+  return { ant: "#065f46", prz: "#0c4a6e", atr: "#991b1b", pend: "#92400e" }[st];
+}
+function rowBg(st) {
+  return { ant: "#f0fdf4", prz: "#f0f9ff", atr: "#fff5f5", pend: "#fffbeb" }[st];
+}
+function deltaColor(delta) {
+  if (delta == null) return "#d97706";
+  if (delta > 0) return "#dc2626";
+  if (delta < 0) return "#059669";
+  return "#0369a1";
+}
+
+function aplicarFiltrosTabela() {
+  const nfe = document.getElementById("fNfe").value;
+  let linhas = _filtradas;
+  if (_statusAtivo) linhas = linhas.filter(r => r.status === _statusAtivo);
+  if (nfe) linhas = linhas.filter(r => nfe === "__EMPTY__" ? !r.NF_ENTRADA : r.NF_ENTRADA === nfe);
+
+  linhas = [...linhas].sort((a, b) => (a.DT_PREVISTA_CLIENTE_FINAL || "").localeCompare(b.DT_PREVISTA_CLIENTE_FINAL || "")).slice(0, 200);
+
+  document.getElementById("tbBody").innerHTML = linhas.map(r => {
+    const deltaTxt = r.delta == null ? "—" : (r.delta > 0 ? "+" + r.delta : String(r.delta));
+    return `<tr style="background:${rowBg(r.status)}">
+      <td class="nf">${r.NF}</td>
+      <td class="cl" title="${r.CLIENTE}">${r.CLIENTE}</td>
+      <td class="sm">${r.CIDADE_CLIENTE || ""}</td>
+      <td><span class="uf">${r.UF_CLIENTE || ""}</span></td>
+      <td class="fl">${r.TIPO_FLUXO === "REDESPACHO" ? "Red" : "Dir"}</td>
+      <td class="sm">${r.TRANSP_PRINCIPAL || ""}</td>
+      <td class="sm">${r.TRANSP_REDESPACHO || "—"}</td>
+      <td class="vl">${fmtValor(r.VALOR_NF)}</td>
+      <td class="dt">${fmtData(r.DT_PREVISTA_CLIENTE_FINAL)}</td>
+      <td class="dt">${fmtData(r.DT_ENTREGA_CLIENTE)}</td>
+      <td style="color:${deltaColor(r.delta)};font-weight:700;text-align:center">${deltaTxt}</td>
+      <td><span class="st" style="background:${statusBg(r.status)};color:${statusColor(r.status)}">${statusLabel(r.status)}</span></td>
+      <td class="nfe">${r.NF_ENTRADA || "—"}</td>
+    </tr>`;
+  }).join("");
+}
+
+document.getElementById("backBtn").addEventListener("click", () => { window.location.href = "index.html"; });
+
+document.getElementById("fMesAno").addEventListener("change", () => { popularDias(); aplicarFiltrosPrincipais(); });
+document.getElementById("fDia").addEventListener("change", aplicarFiltrosPrincipais);
+document.getElementById("fUf").addEventListener("change", aplicarFiltrosPrincipais);
+document.getElementById("fTranspDireta").addEventListener("change", aplicarFiltrosPrincipais);
+document.getElementById("fTranspRedesp").addEventListener("change", aplicarFiltrosPrincipais);
+
+document.getElementById("chkMostrarOTD").addEventListener("change", (e) => {
+  if (e.target.checked) document.getElementById("chkOcultarOTD").checked = false;
+  renderKPIs();
+});
+document.getElementById("chkOcultarOTD").addEventListener("change", (e) => {
+  if (e.target.checked) document.getElementById("chkMostrarOTD").checked = false;
+  renderKPIs();
+});
+
+document.getElementById("flt-bar").addEventListener("click", (e) => {
+  const btn = e.target.closest(".fb");
+  if (!btn) return;
+  document.querySelectorAll(".fb").forEach(b => b.classList.remove("fa"));
+  btn.classList.add("fa");
+  _statusAtivo = btn.getAttribute("data-st");
+  aplicarFiltrosTabela();
+});
+document.getElementById("fNfe").addEventListener("change", aplicarFiltrosTabela);
+
+document.getElementById("exBtn").addEventListener("click", () => {
+  const ths = document.querySelectorAll("thead th");
+  const linhas = [[...ths].map(h => h.textContent.trim()).join(";")];
+  document.querySelectorAll("#tbBody tr").forEach(r => {
+    const row = [...r.querySelectorAll("td")].map(c => c.textContent.trim());
+    linhas.push(row.join(";"));
+  });
+  const blob = new Blob([linhas.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "Analise_Previsao.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+carregar();
+</script>
+</body>
+</html>

@@ -505,6 +505,48 @@ def montar_sem_lead_time(df: pd.DataFrame) -> dict:
     }
 
 
+def montar_analise_previsao(df: pd.DataFrame) -> list[dict]:
+    """Equivalente à medida DAX 'HTML Analise Previsao v2': base completa de
+    NFs com data prevista de entrega (de qualquer período), para a página
+    de análise de OTD. Filtros (mês/ano/dia/UF/transportadora) e KPIs são
+    recalculados no frontend a partir desta base, igual aos slicers do
+    Power BI.
+    """
+    base = df[df["DT_PREVISTA_CLIENTE_FINAL"].notna()].copy()
+
+    # NFs que são, elas mesmas, o documento de entrada/devolução de outra
+    # NF (aparecem como NF_ENTRADA de alguma linha) — excluídas das
+    # pendentes para não duplicar a mesma devolução nos dois lados.
+    nfs_entrada_set = set(df["NF_ENTRADA"].dropna().unique())
+    pendente_a_excluir = base["DT_ENTREGA_CLIENTE"].isna() & base["NF"].isin(nfs_entrada_set)
+    base = base[~pendente_a_excluir]
+
+    def _status(row):
+        if pd.isna(row["DT_ENTREGA_CLIENTE"]):
+            return "pend"
+        if row["DT_ENTREGA_CLIENTE"] < row["DT_PREVISTA_CLIENTE_FINAL"]:
+            return "ant"
+        if row["DT_ENTREGA_CLIENTE"] == row["DT_PREVISTA_CLIENTE_FINAL"]:
+            return "prz"
+        return "atr"
+
+    base["status"] = base.apply(_status, axis=1)
+    base["delta"] = base.apply(
+        lambda r: None if pd.isna(r["DT_ENTREGA_CLIENTE"])
+        else (r["DT_ENTREGA_CLIENTE"] - r["DT_PREVISTA_CLIENTE_FINAL"]).days,
+        axis=1,
+    )
+
+    colunas = [
+        "NF", "CLIENTE", "CIDADE_CLIENTE", "UF_CLIENTE", "TIPO_FLUXO",
+        "TRANSP_PRINCIPAL", "TRANSP_REDESPACHO", "VALOR_NF",
+        "DT_PREVISTA_CLIENTE_FINAL", "DT_ENTREGA_CLIENTE", "delta", "status", "NF_ENTRADA",
+    ]
+    saida = base[colunas]
+    saida = saida.astype(object).where(saida.notna(), None)
+    return saida.to_dict(orient="records")
+
+
 # ---------------------------------------------------------------------
 # 7) Orquestrador principal
 # ---------------------------------------------------------------------

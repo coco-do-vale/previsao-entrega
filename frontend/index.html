@@ -417,7 +417,7 @@ function renderKPIs() {
     <div class="kpi kpi-slt" id="kpiSlt" style="cursor:pointer"><div class="kl">⚠ Sem Lead Time</div><div class="kv">${k.sem_lead_time_total}</div><div class="ks">${fmtMoedaResumo(k.sem_lead_time_valor)} em risco</div></div>
     <div class="kpi kpi-sltr"><div class="kl">Sem LT — Redespacho</div><div class="kv">${k.sem_lead_time_redespacho_qtd}</div><div class="ks">${fmtMoedaResumo(k.sem_lead_time_redespacho_valor)}</div></div>
     <div class="kpi kpi-sltd"><div class="kl">Sem LT — Direta</div><div class="kv">${k.sem_lead_time_direta_qtd}</div><div class="ks">${fmtMoedaResumo(k.sem_lead_time_direta_valor)}</div></div>
-    <div class="kpi kpi-vlt"><div class="kl">✓ OTD — Mês</div><div class="kv">${k.otd_pct}%</div><div class="ks">${k.otd_no_prazo} no prazo / ${k.otd_base} entregas</div></div>
+    <div class="kpi kpi-vlt" id="kpiOtd" style="cursor:pointer"><div class="kl">✓ OTD — Mês</div><div class="kv">${k.otd_pct}%</div><div class="ks">${k.otd_no_prazo} no prazo / ${k.otd_base} entregas</div></div>
     <div class="kpi kpi-otd"><div class="kl">▲ Antecipadas</div><div class="kv">${k.otd_antecipado}</div><div class="ks">entregas antecipadas</div></div>
     <div class="kpi kpi-atr"><div class="kl">▼ Atrasadas</div><div class="kv">${k.otd_atrasado}</div><div class="ks">entregas com atraso</div></div>
     <div class="kpi kpi-pend"><div class="kl">⏳ Em Trânsito</div><div class="kv">${k.em_transito_total}</div><div class="ks">aguardando entrega</div></div>
@@ -791,6 +791,7 @@ document.getElementById("fatBar").addEventListener("click", (e) => {
 
 document.getElementById("kpiBar").addEventListener("click", (e) => {
   if (e.target.closest("#kpiSlt")) abrirSemLeadTime();
+  if (e.target.closest("#kpiOtd")) window.location.href = "analise-previsao.html";
 });
 
 carregar();

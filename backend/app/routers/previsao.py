@@ -9,7 +9,7 @@ from app.services.logica_previsao import (
     montar_payload_completo, carregar_base, montar_tabela_periodo,
     montar_tabela_mes_com_romaneio, montar_tabela_mes_sem_romaneio,
     montar_tabela_hoje, montar_tabela_hoje_sem_romaneio,
-    montar_sem_lead_time,
+    montar_sem_lead_time, montar_analise_previsao,
     calcular_datas_referencia,
 )
 
@@ -96,6 +96,15 @@ def get_sem_lead_time():
     entrega cujo cálculo de prazo não pôde ser feito por falta de LT."""
     df = carregar_base()
     return montar_sem_lead_time(df)
+
+
+@router.get("/analise-previsao")
+def get_analise_previsao():
+    """Base completa de NFs com data prevista de entrega (todas as datas),
+    para a página de Análise de Previsão de Entregas — filtros e KPIs
+    (OTD real/otimista/pessimista) são recalculados no frontend."""
+    df = carregar_base()
+    return montar_analise_previsao(df)
 
 
 @router.get("/health")
