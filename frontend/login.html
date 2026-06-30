@@ -54,17 +54,17 @@ body{
   <div class="caixa">
     <div id="msg" class="msg"></div>
 
-    <form class="form ativo" id="formLogin">
-      <div class="campo"><label>E-mail</label><input type="email" id="loginEmail" placeholder="voce@cocodovale.com.br" required></div>
-      <div class="campo"><label>Senha</label><input type="password" id="loginSenha" required></div>
+    <form class="form ativo" id="formLogin" autocomplete="off">
+      <div class="campo"><label>E-mail</label><input type="email" id="loginEmail" placeholder="voce@cocodovale.com.br" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" required></div>
+      <div class="campo"><label>Senha</label><input type="password" id="loginSenha" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" required></div>
       <button type="submit" class="btn-principal">Entrar</button>
       <div class="links"><a id="irCadastro">Criar conta</a><a id="irEsqueci">Esqueci minha senha</a></div>
     </form>
 
-    <form class="form" id="formCadastro">
-      <div class="campo"><label>E-mail (@cocodovale.com.br)</label><input type="email" id="cadEmail" placeholder="voce@cocodovale.com.br" required></div>
-      <div class="campo"><label>Senha (mín. 8 caracteres)</label><input type="password" id="cadSenha" minlength="8" required></div>
-      <div class="campo"><label>Confirmar senha</label><input type="password" id="cadSenha2" minlength="8" required></div>
+    <form class="form" id="formCadastro" autocomplete="off">
+      <div class="campo"><label>E-mail (@cocodovale.com.br)</label><input type="email" id="cadEmail" placeholder="voce@cocodovale.com.br" autocomplete="off" required></div>
+      <div class="campo"><label>Senha (mín. 8 caracteres)</label><input type="password" id="cadSenha" minlength="8" autocomplete="new-password" required></div>
+      <div class="campo"><label>Confirmar senha</label><input type="password" id="cadSenha2" minlength="8" autocomplete="new-password" required></div>
       <button type="submit" class="btn-principal">Criar conta</button>
       <div class="links"><a id="irLoginDeCadastro">Já tenho conta</a><span></span></div>
     </form>
@@ -88,11 +88,26 @@ body{
 <script>
 const API_BASE = window.API_BASE_URL || "";
 
+function limparFormularios() {
+  document.querySelectorAll(".form input").forEach(i => { i.value = ""; });
+}
+
 function mostrarForm(id) {
   document.querySelectorAll(".form").forEach(f => f.classList.remove("ativo"));
   document.getElementById(id).classList.add("ativo");
   ocultarMsg();
 }
+
+// Garante campos vazios mesmo se o navegador restaurar a página do cache
+// (botão voltar) ou tentar preencher e-mail/senha automaticamente. O
+// readonly nos campos (removido só ao focar) já evita boa parte do
+// autofill; o setTimeout aqui limpa qualquer preenchimento que ainda
+// escape disso (alguns navegadores preenchem um instante depois do load).
+limparFormularios();
+window.addEventListener("pageshow", (e) => {
+  if (e.persisted) limparFormularios();
+});
+window.addEventListener("load", () => setTimeout(limparFormularios, 200));
 
 function mostrarMsg(texto, tipo) {
   const el = document.getElementById("msg");
@@ -127,6 +142,7 @@ document.getElementById("formLogin").addEventListener("submit", async (e) => {
     const destino = new URLSearchParams(window.location.search).get("voltar") || "index.html";
     window.location.href = destino;
   } catch (err) {
+    document.getElementById("loginSenha").value = "";
     mostrarMsg(err.message, "erro");
   }
 });
