@@ -26,6 +26,7 @@ body{display:flex;flex-direction:column}
 .filtros{background:#fff;border-bottom:1px solid #e5e7eb;padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex-shrink:0}
 .filtros label{font-size:11px;font-weight:700;color:#374151;display:flex;flex-direction:column;gap:3px}
 .filtros select,.filtros input{padding:5px 9px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;color:#374151;background:#fff;min-width:120px}
+#fMes{min-width:130px;padding:2px 4px}
 .filtros input{min-width:200px}
 .filtros select:focus,.filtros input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.1)}
 #btnLimpar{padding:5px 14px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;cursor:pointer;background:#f9fafb;color:#374151;font-weight:600}
@@ -104,9 +105,8 @@ tbody tr:hover td{background:#f8fafc}
   <label>Vendedor
     <select id="fVend"><option value="">Todos</option></select>
   </label>
-  <label>Mês emissão
-    <select id="fMes">
-      <option value="">Todos</option>
+  <label>Mês emissão <span style="font-size:10px;font-weight:400;color:#9ca3af">(Ctrl para vários)</span>
+    <select id="fMes" multiple size="3">
       <option value="01">Janeiro</option><option value="02">Fevereiro</option>
       <option value="03">Março</option><option value="04">Abril</option>
       <option value="05">Maio</option><option value="06">Junho</option>
@@ -296,7 +296,7 @@ function filtrar(itens) {
   const sit   = document.getElementById("fSit").value;
   const uf    = document.getElementById("fUF").value;
   const vend  = document.getElementById("fVend").value;
-  const mes   = document.getElementById("fMes").value;
+  const meses = [...document.getElementById("fMes").selectedOptions].map(o => o.value);
   const estq  = document.getElementById("fEstoque").value;
 
   return itens.filter(r => {
@@ -305,7 +305,7 @@ function filtrar(itens) {
     if (vend && r["VENDEDOR"] !== vend) return false;
     if (estq === "ok"  && (r["SALDO ESTOQUE"] ?? 0) < 0) return false;
     if (estq === "neg" && (r["SALDO ESTOQUE"] ?? 0) >= 0) return false;
-    if (mes  && r["EMISSAO"] && !r["EMISSAO"].startsWith(`${new Date().getFullYear()}-${mes}`)) return false;
+    if (meses.length && r["EMISSAO"] && !meses.some(m => r["EMISSAO"].startsWith(`${new Date().getFullYear()}-${m}`))) return false;
     if (busca) {
       const haystack = [
         r["N PEDIDO"], r["PED CLIENTE"], r["NOME CLIENTE"],
@@ -420,9 +420,10 @@ document.querySelectorAll("thead th[data-col]").forEach(th => {
 
 document.getElementById("btnLimpar").addEventListener("click", () => {
   document.getElementById("fBusca").value = "";
-  ["fSit","fUF","fVend","fMes","fEstoque"].forEach(id => {
+  ["fSit","fUF","fVend","fEstoque"].forEach(id => {
     document.getElementById(id).value = "";
   });
+  [...document.getElementById("fMes").options].forEach(o => o.selected = false);
   renderTabela();
 });
 
