@@ -34,9 +34,10 @@ está deliberadamente restrito à rede interna (sem exposição à internet).
 | `redefinir-senha.html` | Definir nova senha a partir do link de reset |
 | `index.html` | Painel principal — KPIs, faturamento, pontualidade por dia, sem lead time |
 | `analise-previsao.html` | Análise de OTD com filtros (mês/ano/dia/UF/transportadora) e projeção de cenários |
+| `carteira-pedidos.html` | Carteira de pedidos pendentes — KPIs (valor, peso, programado/imediato), filtros dinâmicos, tabela ordenável, export CSV |
 
-Todas exigem sessão válida (exceto login/cadastro/reset). O painel principal
-e a análise de previsão se atualizam sozinhos a cada 60s.
+Todas exigem sessão válida (exceto login/cadastro/reset). Todas as páginas
+se atualizam automaticamente a cada 60 s.
 
 ## Passo 1 — Descobrir o schema real (só na primeira vez)
 
@@ -135,6 +136,7 @@ backend/
     models/schemas.py                 <- contrato JSON (Pydantic, parcial)
 frontend/
   index.html                          <- painel principal
+  carteira-pedidos.html                <- carteira de pedidos pendentes
   analise-previsao.html                <- página de análise de OTD
   login.html / redefinir-senha.html     <- autenticação
 abrir-modo-quiosque.bat                  <- atalho de modo quiosque
@@ -169,8 +171,6 @@ git push
 
 **Nunca commitar** `backend/.env`, `backend/auth.db` ou
 `backend/reset_pendentes.log` — já estão no `.gitignore`.
-
-## ATENÇÃO
 
 ## Checklist — migrar para o servidor definitivo da empresa
 
