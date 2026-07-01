@@ -12,6 +12,7 @@ from app.services.logica_previsao import (
     montar_tabela_hoje, montar_tabela_hoje_sem_romaneio,
     montar_sem_lead_time, montar_analise_previsao,
     calcular_datas_referencia,
+    carregar_carteira_pedidos, montar_carteira_pedidos,
 )
 
 router = APIRouter(prefix="/api", tags=["previsao-entregas"], dependencies=[Depends(exigir_login)])
@@ -106,5 +107,18 @@ def get_analise_previsao():
     (OTD real/otimista/pessimista) são recalculados no frontend."""
     df = carregar_base()
     return montar_analise_previsao(df)
+
+
+@router.get("/carteira-pedidos")
+def get_carteira_pedidos():
+    """Carteira de pedidos pendentes de faturamento — KPIs e itens
+    agrupados por situação (PENDENTE/PARCIAL), estoque e vendedor."""
+    try:
+        df = carregar_carteira_pedidos()
+        return montar_carteira_pedidos(df)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
 
 

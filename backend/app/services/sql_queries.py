@@ -188,6 +188,72 @@ ORDER BY
 """
 
 
+SQL_CARTEIRA_PEDIDOS = """
+SELECT
+    C5.C5_NUM                                                   AS [N PEDIDO],
+    C5.C5_PEDCLIE                                               AS [PED CLIENTE],
+    C6.C6_NOTA                                                  AS [INVOICE],
+    CASE WHEN LTRIM(RTRIM(C6.C6_NOTA)) <> '' THEN 'PARCIAL' ELSE 'PENDENTE' END AS [SITUACAO],
+    C5.C5_EMISSAO                                               AS [EMISSAO],
+    C5.C5_CLIENTE                                               AS [CODIGO],
+    C5.C5_LOJACLI                                               AS [LJ],
+    A1.A1_NOME                                                  AS [NOME CLIENTE],
+    A1.A1_EST                                                   AS [UF],
+    A1.A1_MUN                                                   AS [MUNICIPIO],
+    C5.C5_VEND1                                                 AS [COD VEND],
+    A3.A3_NOME                                                  AS [VENDEDOR],
+    C6.C6_DATFAT                                                AS [PRVFAT],
+    C6.C6_ENTREG                                                AS [DT ENTREGA],
+    C6.C6_ITEM                                                  AS [IT],
+    C6.C6_PRODUTO                                               AS [COD PRODUTO],
+    C6.C6_RESERVA                                               AS [RES S/N],
+    C6.C6_QTDVEN                                                AS [QTD PEDIDA],
+    C6.C6_QTDENT                                                AS [QTD ENTREGUE],
+    CAST(NULL AS VARCHAR(10))                                   AS [CARGA COMPARTILHADA],
+    (C6.C6_QTDVEN - C6.C6_QTDENT)                              AS [QTD PENDENTE],
+    CAST(NULL AS VARCHAR(10))                                   AS [PALETE MISTO],
+    ISNULL(B2.B2_QATU, 0) - (C6.C6_QTDVEN - C6.C6_QTDENT)    AS [SALDO ESTOQUE],
+    C6.C6_PRUNIT                                                AS [PRECO MEDIO],
+    (C6.C6_QTDVEN - C6.C6_QTDENT) * C6.C6_PRUNIT              AS [VAL TO DO ITEM],
+    (C6.C6_QTDVEN - C6.C6_QTDENT) * B1.B1_PESBRU              AS [PESO BRUTO],
+    E4.E4_DESCRI                                                AS [PRAZO],
+    A1.A1_CGC                                                   AS [CNPJ]
+FROM SC5010 C5
+JOIN SC6010 C6
+        ON C6.C6_FILIAL = C5.C5_FILIAL
+       AND C6.C6_NUM    = C5.C5_NUM
+       AND C6.D_E_L_E_T_ = ' '
+JOIN SA1010 A1
+        ON A1.A1_COD  = C5.C5_CLIENTE
+       AND A1.A1_LOJA = C5.C5_LOJACLI
+       AND A1.D_E_L_E_T_ = ' '
+JOIN SB1010 B1
+        ON B1.B1_COD = C6.C6_PRODUTO
+       AND B1.D_E_L_E_T_ = ' '
+LEFT JOIN SA3010 A3
+        ON A3.A3_COD = C5.C5_VEND1
+       AND A3.D_E_L_E_T_ = ' '
+LEFT JOIN SB2010 B2
+        ON B2.B2_FILIAL = C6.C6_FILIAL
+       AND B2.B2_COD    = C6.C6_PRODUTO
+       AND B2.B2_LOCAL  = C6.C6_LOCAL
+       AND B2.D_E_L_E_T_ = ' '
+LEFT JOIN SE4010 E4
+        ON E4.E4_CODIGO = C5.C5_CONDPAG
+       AND E4.D_E_L_E_T_ = ' '
+WHERE C5.D_E_L_E_T_ = ' '
+  AND (C6.C6_QTDVEN - C6.C6_QTDENT) > 0
+  AND C5.C5_CLIENTE <> '000517'
+  AND C5.C5_EMISSAO >= '20260101'
+  AND A1.A1_EST <> 'EX'
+  AND C5.C5_VEND1 NOT IN (
+        '000900','000901','0305','EX0018','EX0019','S00035',
+        '000000','000450','000902','S00007','S00005','0307'
+  )
+ORDER BY C5.C5_EMISSAO DESC, C5.C5_NUM, C6.C6_ITEM
+"""
+
+
 SQL_LOOKUP_NF_ENTRADA = """
 SELECT DISTINCT
     SF2.F2_DOC AS NF,

@@ -198,6 +198,7 @@ tbody td{padding:5px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap;over
     <div class="topbar-user">
       <span id="atualizadoEm" style="font-size:10px;color:#93c5fd"></span>
       <span id="userEmail"></span>
+      <button onclick="window.location.href='carteira-pedidos.html'" type="button" id="carteiraBtn" title="Carteira de Pedidos" style="border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;cursor:pointer;font-size:11px;padding:5px 12px;border-radius:6px;font-weight:600">📋 Carteira</button>
       <button id="fullscreenBtn" type="button" title="Tela cheia (F11)">⛶</button>
       <button id="logoutBtn" type="button">Sair</button>
     </div>
@@ -616,7 +617,8 @@ function abrirModal(periodo, label) {
 
 async function abrirModalMesComRomaneio() {
   try {
-    const res = await fetch(`${API_BASE}/api/notas-fiscais/mes-com-romaneio`);
+    const qs = _dataBaseAtual ? `?data_base=${_dataBaseAtual}` : "";
+    const res = await fetch(`${API_BASE}/api/notas-fiscais/mes-com-romaneio${qs}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const dados = await res.json();
     abrirModalComLinhas("Faturamento do Mês", dados, "mes-com-romaneio");
@@ -627,7 +629,8 @@ async function abrirModalMesComRomaneio() {
 
 async function abrirModalMesSemRomaneio() {
   try {
-    const res = await fetch(`${API_BASE}/api/notas-fiscais/mes-sem-romaneio`);
+    const qs = _dataBaseAtual ? `?data_base=${_dataBaseAtual}` : "";
+    const res = await fetch(`${API_BASE}/api/notas-fiscais/mes-sem-romaneio${qs}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const dados = await res.json();
     abrirModalComLinhas("Sem Romaneio — Mês", dados, "mes-sem-romaneio");
@@ -638,7 +641,8 @@ async function abrirModalMesSemRomaneio() {
 
 async function abrirModalHoje() {
   try {
-    const res = await fetch(`${API_BASE}/api/notas-fiscais/hoje`);
+    const qs = _dataBaseAtual ? `?data_base=${_dataBaseAtual}` : "";
+    const res = await fetch(`${API_BASE}/api/notas-fiscais/hoje${qs}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const dados = await res.json();
     abrirModalComLinhas("Faturamento de Hoje", dados, "hoje");
@@ -649,7 +653,8 @@ async function abrirModalHoje() {
 
 async function abrirModalHojeSemRomaneio() {
   try {
-    const res = await fetch(`${API_BASE}/api/notas-fiscais/hoje-sem-romaneio`);
+    const qs = _dataBaseAtual ? `?data_base=${_dataBaseAtual}` : "";
+    const res = await fetch(`${API_BASE}/api/notas-fiscais/hoje-sem-romaneio${qs}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const dados = await res.json();
     abrirModalComLinhas("Sem Romaneio — Hoje", dados, "hoje-sem-romaneio");
@@ -812,7 +817,8 @@ document.getElementById("fNfEntrada").addEventListener("change", renderTabelaFil
 
 document.getElementById("xbtn").addEventListener("click", () => {
   if (_curExportPath) {
-    window.open(`${API_BASE}/api/notas-fiscais/${_curExportPath}/export.csv`, "_blank");
+    const qs = _dataBaseAtual ? `?data_base=${_dataBaseAtual}` : "";
+    window.open(`${API_BASE}/api/notas-fiscais/${_curExportPath}/export.csv${qs}`, "_blank");
     return;
   }
   exportarCsvClientSide(_curRows, `${_curLabel}.csv`);

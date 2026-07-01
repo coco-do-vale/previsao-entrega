@@ -170,6 +170,8 @@ git push
 **Nunca commitar** `backend/.env`, `backend/auth.db` ou
 `backend/reset_pendentes.log` — já estão no `.gitignore`.
 
+## ATENÇÃO
+
 ## Checklist — migrar para o servidor definitivo da empresa
 
 Hoje o backend roda provisoriamente num notebook (ver "Pontos de atenção"

@@ -10,7 +10,7 @@ INFO.VIEW.COLUMNS() do modelo real em 30/06/2026.
 from datetime import date, timedelta
 import pandas as pd
 from app.database import query_df
-from app.services.sql_queries import SQL_FATO_GERAL, SQL_LOOKUP_NF_ENTRADA
+from app.services.sql_queries import SQL_FATO_GERAL, SQL_LOOKUP_NF_ENTRADA, SQL_CARTEIRA_PEDIDOS
 
 
 # ---------------------------------------------------------------------
@@ -218,10 +218,20 @@ def calcular_kpis(df: pd.DataFrame, hoje: date) -> dict:
     sem_lt_redesp = sem_lt_naoentregue[sem_lt_naoentregue["TIPO_FLUXO"] == "REDESPACHO"]
 
     mes_inicio = hoje.replace(day=1)
+
+    # Converte para Timestamp para garantir comparações corretas com
+    # colunas object-dtype (date objects do pandas podem falhar silenciosamente
+    # com operadores >= / <= em certas versões do pandas).
+    mes_inicio_ts = pd.Timestamp(mes_inicio)
+    hoje_ts = pd.Timestamp(hoje)
+
+    dt_entrega_ts = pd.to_datetime(df["DT_ENTREGA_CLIENTE"], errors="coerce")
+    dt_emissao_ts = pd.to_datetime(df["DT_EMISSAO"], errors="coerce")
+
     base_mes_otd = df[
-        (df["DT_ENTREGA_CLIENTE"].notna())
-        & (df["DT_ENTREGA_CLIENTE"] >= mes_inicio)
-        & (df["DT_ENTREGA_CLIENTE"] <= hoje)
+        dt_entrega_ts.notna()
+        & (dt_entrega_ts >= mes_inicio_ts)
+        & (dt_entrega_ts <= hoje_ts)
     ]
     ot_ok = base_mes_otd[base_mes_otd["STATUS_OTD_TOTAL"] == "No Prazo"]
     ot_atr = base_mes_otd[base_mes_otd["STATUS_OTD_TOTAL"] == "Atrasado"]
@@ -232,9 +242,9 @@ def calcular_kpis(df: pd.DataFrame, hoje: date) -> dict:
     # Faturamento: baseado em DT_EMISSAO (não DT_ENTREGA_CLIENTE), igual à
     # medida "HTML Analise Faturamento" original.
     fat_mes_df = df[
-        (df["DT_EMISSAO"].notna())
-        & (df["DT_EMISSAO"] >= mes_inicio)
-        & (df["DT_EMISSAO"] <= hoje)
+        dt_emissao_ts.notna()
+        & (dt_emissao_ts >= mes_inicio_ts)
+        & (dt_emissao_ts <= hoje_ts)
     ]
     fat_mes_bruto = float(fat_mes_df["VALOR_NF"].sum())
     fat_mes_com_rom_df = fat_mes_df[fat_mes_df["ROMANEIO"].notna() & (fat_mes_df["ROMANEIO"] != "")]
@@ -251,7 +261,7 @@ def calcular_kpis(df: pd.DataFrame, hoje: date) -> dict:
     faturamento_mes_liquido = fat_mes_bruto - devolvido_mes_valor
     nfs_mes_liquido = nfs_mes - devolvido_mes_qtd
 
-    fat_hoje_df = df[df["DT_EMISSAO"] == hoje]
+    fat_hoje_df = df[dt_emissao_ts == hoje_ts]
     fat_hoje_bruto = float(fat_hoje_df["VALOR_NF"].sum())
     nfs_hoje = int(fat_hoje_df["NF"].nunique())
     sem_romaneio_hoje_df = fat_hoje_df[fat_hoje_df["ROMANEIO"].isna() | (fat_hoje_df["ROMANEIO"] == "")]
@@ -557,7 +567,7 @@ def montar_payload_completo(data_base: date | None = None) -> dict:
 
     df = carregar_base()
     datas = calcular_datas_referencia(data_base)
-    kpis = calcular_kpis(df, hoje)
+    kpis = calcular_kpis(df, data_base)
 
     periodos = {
         "pendentes": montar_tabela_periodo(df, datas["D1"], pendente=True),
@@ -598,3 +608,74 @@ def montar_payload_completo(data_base: date | None = None) -> dict:
         "pontualidade": pontualidade,
         "resumo_pendentes": resumo_pendentes,
     }
+
+
+# ---------------------------------------------------------------------
+# 8) Carteira de Pedidos — pedidos pendentes de faturamento
+# ---------------------------------------------------------------------
+
+def carregar_carteira_pedidos() -> pd.DataFrame:
+    df = query_df(SQL_CARTEIRA_PEDIDOS)
+
+    for col in df.select_dtypes(include="object").columns:
+        df[col] = df[col].str.strip()
+
+    for col in ["EMISSAO", "PRVFAT", "DT ENTREGA"]:
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors="coerce").dt.date
+
+    for col in ["QTD PEDIDA", "QTD ENTREGUE", "QTD PENDENTE",
+                "SALDO ESTOQUE", "PRECO MEDIO", "VAL TO DO ITEM", "PESO BRUTO"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
+    return df
+
+
+def montar_carteira_pedidos(df: pd.DataFrame) -> dict:
+    zeros = {
+        "total_pedidos": 0, "total_itens": 0, "valor_total": 0.0,
+        "peso_total": 0.0, "pendentes_qtd": 0, "pendentes_valor": 0.0,
+        "parciais_qtd": 0, "parciais_valor": 0.0,
+        "sem_estoque_qtd": 0, "sem_estoque_valor": 0.0, "clientes_qtd": 0,
+    }
+    if df.empty:
+        return {"kpis": zeros, "itens": []}
+
+    pend_df  = df[df["SITUACAO"] == "PENDENTE"]
+    parc_df  = df[df["SITUACAO"] == "PARCIAL"]
+    sest_df  = df[df["SALDO ESTOQUE"] < 0]
+
+    kpis = {
+        "total_pedidos":   int(df["N PEDIDO"].nunique()),
+        "total_itens":     len(df),
+        "valor_total":     float(df["VAL TO DO ITEM"].sum()),
+        "peso_total":      float(df["PESO BRUTO"].sum()),
+        "pendentes_qtd":   int(pend_df["N PEDIDO"].nunique()),
+        "pendentes_valor": float(pend_df["VAL TO DO ITEM"].sum()),
+        "parciais_qtd":    int(parc_df["N PEDIDO"].nunique()),
+        "parciais_valor":  float(parc_df["VAL TO DO ITEM"].sum()),
+        "sem_estoque_qtd":   len(sest_df),
+        "sem_estoque_valor": float(sest_df["VAL TO DO ITEM"].sum()),
+        "clientes_qtd":    int(df["CODIGO"].nunique()),
+    }
+
+    out = df.copy()
+    for col in ["EMISSAO", "PRVFAT", "DT ENTREGA"]:
+        if col in out.columns:
+            out[col] = out[col].apply(
+                lambda d: d.isoformat() if d is not None and not pd.isna(d) else None
+            )
+
+    colunas = [
+        "N PEDIDO", "PED CLIENTE", "INVOICE", "SITUACAO", "EMISSAO",
+        "CODIGO", "LJ", "NOME CLIENTE", "UF", "MUNICIPIO",
+        "COD VEND", "VENDEDOR", "PRVFAT", "DT ENTREGA",
+        "IT", "COD PRODUTO", "RES S/N",
+        "QTD PEDIDA", "QTD ENTREGUE", "QTD PENDENTE",
+        "SALDO ESTOQUE", "PRECO MEDIO", "VAL TO DO ITEM", "PESO BRUTO",
+        "PRAZO", "CNPJ",
+    ]
+    presentes = [c for c in colunas if c in out.columns]
+    saida = out[presentes].astype(object).where(out[presentes].notna(), None)
+    return {"kpis": kpis, "itens": saida.to_dict(orient="records")}
