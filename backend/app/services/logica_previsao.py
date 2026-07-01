@@ -620,8 +620,12 @@ def montar_payload_completo(data_base: date | None = None) -> dict:
 def carregar_carteira_pedidos() -> pd.DataFrame:
     df = query_df(SQL_CARTEIRA_PEDIDOS)
 
+    # Exclui colunas de data do strip — campos DATE do SQL Server chegam como
+    # datetime.date via pyodbc e str.strip() os destruiria (retorna NaN).
+    _date_cols = {"EMISSAO", "PRVFAT", "DT ENTREGA"}
     for col in df.select_dtypes(include="object").columns:
-        df[col] = df[col].str.strip()
+        if col not in _date_cols:
+            df[col] = df[col].str.strip()
 
     for col in ["EMISSAO", "PRVFAT", "DT ENTREGA"]:
         if col in df.columns:
