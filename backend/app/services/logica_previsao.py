@@ -248,7 +248,9 @@ def calcular_kpis(df: pd.DataFrame, hoje: date) -> dict:
     ]
     fat_mes_bruto = float(fat_mes_df["VALOR_NF"].sum())
     fat_mes_com_rom_df = fat_mes_df[fat_mes_df["ROMANEIO"].notna() & (fat_mes_df["ROMANEIO"] != "")]
+    fat_mes_sem_rom_df = fat_mes_df[fat_mes_df["ROMANEIO"].isna() | (fat_mes_df["ROMANEIO"] == "")]
     fat_mes_com_rom = float(fat_mes_com_rom_df["VALOR_NF"].sum())
+    fat_mes_sem_rom = float(fat_mes_sem_rom_df["VALOR_NF"].sum())
     nfs_mes = int(fat_mes_df["NF"].nunique())
     nfs_mes_com_romaneio = int(fat_mes_com_rom_df["NF"].nunique())
     sem_romaneio_mes_qtd = nfs_mes - nfs_mes_com_romaneio
@@ -280,6 +282,7 @@ def calcular_kpis(df: pd.DataFrame, hoje: date) -> dict:
         "faturamento_mes_bruto": fat_mes_bruto,
         "faturamento_mes_liquido": faturamento_mes_liquido,
         "faturamento_mes_com_romaneio": fat_mes_com_rom,
+        "faturamento_mes_sem_romaneio": fat_mes_sem_rom,
         "nfs_mes": nfs_mes,
         "nfs_mes_liquido": nfs_mes_liquido,
         "nfs_mes_com_romaneio": nfs_mes_com_romaneio,

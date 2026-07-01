@@ -478,7 +478,7 @@ function renderFaturamento() {
   const mes = mesAtualAbrev();
   document.getElementById("fatBar").innerHTML = `
     <div class="fat fat-mes1" id="fatMes1" style="cursor:pointer"><div class="fat-lbl">Faturamento do Mês (${mes})</div><div class="fat-val">${fmtMoedaResumo(k.faturamento_mes_com_romaneio)}</div><div class="fat-sub">${k.nfs_mes_com_romaneio} NFs emitidas no mês · ${fmtMoeda(k.devolvido_mes_valor)} devolvido (NF Entrada)</div></div>
-    <div class="fat fat-mes2" id="fatMes2" style="cursor:pointer"><div class="fat-lbl">Faturamento do Mês (${mes})</div><div class="fat-val">${fmtMoedaResumo(k.faturamento_mes_liquido)}</div><div class="fat-sub">${k.nfs_mes_liquido} NFs emitidas no mês · ${k.sem_romaneio_mes_qtd} sem romaneio</div></div>
+    <div class="fat fat-mes2" id="fatMes2" style="cursor:pointer"><div class="fat-lbl">Sem Romaneio — Mês (${mes})</div><div class="fat-val">${fmtMoedaResumo(k.faturamento_mes_sem_romaneio)}</div><div class="fat-sub">${k.sem_romaneio_mes_qtd} NFs sem romaneio</div></div>
     <div class="fat fat-hoje1" id="fatHoje1" style="cursor:pointer"><div class="fat-lbl">Faturamento de Hoje</div><div class="fat-val">${fmtMoedaResumo(k.faturamento_hoje_liquido)}</div><div class="fat-sub">${k.nfs_hoje_liquido} NFs emitidas hoje · ${fmtMoeda(k.devolvido_hoje_valor)} devolvido (NF Entrada)</div></div>
     <div class="fat fat-hoje2" id="fatHoje2" style="cursor:pointer"><div class="fat-lbl">Faturamento de Hoje</div><div class="fat-val">${fmtMoedaResumo(k.valor_sem_romaneio_hoje)}</div><div class="fat-sub">${k.nfs_hoje} NFs emitidas hoje · ${k.sem_romaneio_hoje} sem romaneio</div></div>
   `;
