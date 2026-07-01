@@ -170,9 +170,13 @@ tbody td{padding:5px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap;over
 </head>
 <body>
 
+<!-- Exibido enquanto a API ainda não respondeu -->
 <div id="loading">Carregando dados...</div>
 
+<!-- Container principal — oculto até os dados carregarem (ver carregar()) -->
 <div id="app" style="display:none">
+
+  <!-- TOPBAR: logo, filtros de mês/ano/dia, botão Carteira, tela cheia e logout -->
   <div class="topbar">
     <div class="topbar-brand">
       <div class="logo">Coco<span>do Vale</span></div>
@@ -203,12 +207,20 @@ tbody td{padding:5px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap;over
       <button id="logoutBtn" type="button">Sair</button>
     </div>
   </div>
+  <!-- FATURAMENTO: 4 cards — faturamento do mês (com/sem romaneio) e de hoje (com/sem romaneio) -->
   <div class="fat-bar" id="fatBar"></div>
+
+  <!-- KPIs: sem lead time, OTD do mês, antecipadas, atrasadas, em trânsito -->
   <div class="kpi-bar" id="kpiBar"></div>
+
+  <!-- GRADE DE DIAS: 6 colunas — Pendentes, Ontem (D1), Hoje (D2), D3, D4, D5 -->
   <div class="grid" id="grid"></div>
 </div>
 
+<!-- Fundo escuro do modal de NFs -->
 <div id="overlay"></div>
+
+<!-- MODAL DE NFs: tabela detalhada ao clicar em um card da grade ou no faturamento -->
 <div id="ts">
   <div id="tt">Notas fiscais — <span id="tts"></span>
     <button id="xbtn" type="button">📊 Exportar Excel</button>
@@ -249,7 +261,10 @@ tbody td{padding:5px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap;over
   </div>
 </div>
 
+<!-- Fundo escuro do modal "Sem Lead Time" -->
 <div id="sltOverlay"></div>
+
+<!-- MODAL SEM LEAD TIME: transportadoras/cidades sem LT cadastrado — aberto clicando no card ⚠ -->
 <div id="sltModal">
   <div id="sltHead">
     <span id="sltTitleTxt">⚠ Transportadoras Sem Lead Time Cadastrado</span>
@@ -279,21 +294,24 @@ tbody td{padding:5px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap;over
 </div>
 
 <script>
+// ── CONFIGURAÇÃO ──────────────────────────────────────────
 // Vazio = usa a própria origem da página (funciona em qualquer máquina da
 // rede quando o backend serve o frontend). Defina window.API_BASE_URL antes
 // deste script só se a API estiver em outro host/porta.
 const API_BASE = window.API_BASE_URL || "";
 
-let _payload = null;
-let _curRows = [];
-let _curLabel = "";
-let _curExportPath = null;
+// Estado global da página
+let _payload = null;        // resposta da API /api/previsao-entregas
+let _curRows = [];          // linhas atualmente abertas no modal de NFs
+let _curLabel = "";         // título do modal atual
+let _curExportPath = null;  // rota de export CSV do modal atual
 
 const statusClass = {
   "Pendente": "st-pend", "Antecipada": "st-ant",
   "No prazo": "st-ok", "Atrasado": "st-atr"
 };
 
+// ── FORMATAÇÃO ────────────────────────────────────────────
 function fmtMoeda(v) {
   if (v == null) return "R$ 0";
   return "R$ " + Math.round(v).toLocaleString("pt-BR");
@@ -313,6 +331,7 @@ function mesAtualAbrev() {
   return MESES_ABREV[new Date(iso + "T00:00:00").getMonth()];
 }
 
+// ── AUTH ──────────────────────────────────────────────────
 function irParaLogin() {
   window.location.href = "login.html?voltar=" + encodeURIComponent(window.location.pathname.split("/").pop());
 }
@@ -347,8 +366,9 @@ document.addEventListener("fullscreenchange", () => {
   ajustarEscala();
 });
 
+// ── CARREGAR DADOS ────────────────────────────────────────
 let _dataBaseAtual = null;
-const AUTO_REFRESH_MS = 60000;
+const AUTO_REFRESH_MS = 60000; // atualização automática a cada 60 s
 
 async function carregar(dataBase) {
   _dataBaseAtual = dataBase || null;
@@ -399,6 +419,7 @@ window.addEventListener("resize", () => {
   _resizeTimer = setTimeout(ajustarEscala, 150);
 });
 
+// ── FILTROS DE DATA ───────────────────────────────────────
 function popularFiltrosData() {
   const hoje = new Date();
   const anoAtual = hoje.getFullYear();
@@ -451,6 +472,7 @@ document.getElementById("fDia").addEventListener("change", aplicarFiltrosData);
 
 popularFiltrosData();
 
+// ── RENDER: CARDS DE FATURAMENTO ─────────────────────────
 function renderFaturamento() {
   const k = _payload.kpis;
   const mes = mesAtualAbrev();
@@ -462,6 +484,7 @@ function renderFaturamento() {
   `;
 }
 
+// ── RENDER: CARDS DE KPI ──────────────────────────────────
 function renderKPIs() {
   const k = _payload.kpis;
   document.getElementById("kpiBar").innerHTML = `
@@ -488,6 +511,7 @@ function pillsHtml(pont) {
   `;
 }
 
+// ── RENDER: GRADE DE DIAS ─────────────────────────────────
 function renderGrid() {
   const labels = {
     pendentes: "NF Pendentes",
@@ -587,6 +611,7 @@ function linhaHtml(r) {
     </tr>`;
 }
 
+// ── MODAL DE NFs ──────────────────────────────────────────
 function renderTabelaFiltrada() {
   const fStatus = document.getElementById("fStatus").value;
   const fNf = document.getElementById("fNfEntrada").value;
@@ -838,6 +863,7 @@ function exportarCsvClientSide(rows, filename) {
   URL.revokeObjectURL(url);
 }
 
+// ── EVENTOS DE CLIQUE NOS CARDS ───────────────────────────
 document.getElementById("fatBar").addEventListener("click", (e) => {
   if (e.target.closest("#fatMes1")) abrirModalMesComRomaneio();
   if (e.target.closest("#fatMes2")) abrirModalMesSemRomaneio();
@@ -850,6 +876,7 @@ document.getElementById("kpiBar").addEventListener("click", (e) => {
   if (e.target.closest("#kpiOtd")) window.location.href = "analise-previsao.html";
 });
 
+// ── INICIALIZAR ───────────────────────────────────────────
 (async () => {
   if (await checarSessao()) {
     carregar();
