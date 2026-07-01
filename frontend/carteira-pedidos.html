@@ -339,9 +339,9 @@ function calcularKPIs(itens) {
   const parc = itens.filter(r => r["SITUACAO"] === "PARCIAL");
   const sest = itens.filter(r => (r["SALDO ESTOQUE"] ?? 0) < 0);
   // Programado = tem PRVFAT preenchida (faturamento agendado para uma data)
-  // Imediato   = sem PRVFAT (deve ser faturado imediatamente)
+  // Imediato   = sem PRVFAT e com saldo de estoque positivo (pode faturar agora)
   const prog = itens.filter(r => r["PRVFAT"] && r["PRVFAT"] !== "");
-  const imdt = itens.filter(r => !r["PRVFAT"] || r["PRVFAT"] === "");
+  const imdt = itens.filter(r => (!r["PRVFAT"] || r["PRVFAT"] === "") && (r["SALDO ESTOQUE"] ?? 0) >= 0);
 
   return {
     total_pedidos:   uniq(itens.map(r => r["N PEDIDO"])),
